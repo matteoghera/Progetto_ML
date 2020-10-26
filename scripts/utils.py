@@ -73,10 +73,26 @@ class SNLI(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "SNLI")
         self.load_dev_test_train()
-        self.dev_jsonl=pd.read_json(self.path / "dev.jsonl", orient='records')
-        self.test_jsonl = pd.read_json(self.path / "test.jsonl", orient='records')
-        self.train_jsonl = pd.read_json(self.path / "train.jsonl", orient="records")
+        self.dev_jsonl=self.__from_json("dev.jsonl")
+        self.test_jsonl = self.__from_json("test.jsonl")
+        self.train_jsonl = self.__from_json("train.jsonl")
 
+    def __from_json(self, file_name):
+        import re
+        import ast
+        with open(self.path / file_name) as f:
+            pattern = '"annotator_labels":\s.("neutral",\s|"entailment",\s|"contradiction",\s|"neutral"|"entailment"|"contradiction")*.,\s'
+            data = f.read()
+            data = re.sub(pattern, "", data)
+
+            # f = open(PROJ_DIR / "prova.txt", "w")
+            # f.write(data)
+            # f.close()
+
+            data = data.split(sep="\n")
+            data = [ast.literal_eval(row) for row in data[:9999]]
+            data = pd.DataFrame(data)
+        return data
 
 class MNLI(PairwiseTextClassification):
     def __init__(self, path):
