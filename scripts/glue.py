@@ -1,5 +1,4 @@
 import pandas as pd
-import json
 from path import Path
 
 class Tasks:
@@ -31,6 +30,9 @@ class RelevanceRanking(Tasks):
     def __init__(self, path):
         super().__init__(path)
 
+
+### Single-Sentence Classification tasks
+
 class CoLA(SingleSentenceClassification):
     def __init__(self, path):
         super().__init__(path / "CoLA")
@@ -45,6 +47,9 @@ class SST_2(SingleSentenceClassification):
     def __init__(self, path):
         super().__init__(path / "SST-2")
         self.load_dev_test_train()
+
+
+### Pairwise Text Classification tasks
 
 class RTE(PairwiseTextClassification):
     def __init__(self, path):
@@ -84,13 +89,9 @@ class SNLI(PairwiseTextClassification):
             pattern = '"annotator_labels":\s.("neutral",\s|"entailment",\s|"contradiction",\s|"neutral"|"entailment"|"contradiction")*.,\s'
             data = f.read()
             data = re.sub(pattern, "", data)
-
-            # f = open(PROJ_DIR / "prova.txt", "w")
-            # f.write(data)
-            # f.close()
-
             data = data.split(sep="\n")
             data = [ast.literal_eval(row) for row in data[:9999]]
+
             data = pd.DataFrame(data)
         return data
 
@@ -105,15 +106,22 @@ class MNLI(PairwiseTextClassification):
         self.test_mismatched = pd.read_csv(self.path / "test_mismatched.tsv", sep="\t", error_bad_lines=False)
         self.train = pd.read_csv(self.path / "train.tsv", sep="\t", error_bad_lines=False)
 
+
+### Text Similarity tasks
+
 class STS_B(TextSimilarity):
     def __init__(self, path):
         super().__init__(path / "STS-B")
         self.load_dev_test_train()
 
     def load_dev_test_train(self):
+        import csv
         self.dev=pd.read_csv(self.path / "dev.tsv", sep="\t", error_bad_lines=False)
         self.train=pd.read_csv(self.path / "train.tsv",sep="\t", error_bad_lines=False)
-        self.test=pd.read_csv(self.path/ "test.tsv", sep="\t", error_bad_lines=False, engine='python')
+        self.test=pd.read_csv(self.path/ "test.tsv", sep="\t", error_bad_lines=False, quoting=csv.QUOTE_NONE) #engine='python')
+
+
+### Relevance Ranking tasks
 
 class QNLI(RelevanceRanking):
     def __init__(self, path):
