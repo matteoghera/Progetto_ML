@@ -154,6 +154,10 @@ class SNLI(PairwiseTextClassification):
 class MNLI(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "MNLI")
+        self.load_dev_test_train()
+        self.__data_cleanup()
+
+    def load_dev_test_train(self):
         dev_matched=pd.read_csv(self.path / "dev_matched.tsv", sep="\t", error_bad_lines=False)
         dev_mismatched = pd.read_csv(self.path / "dev_mismatched.tsv", sep="\t", error_bad_lines=False)
         self.dev=pd.concat([dev_matched,dev_mismatched], ignore_index=True)
@@ -167,7 +171,6 @@ class MNLI(PairwiseTextClassification):
         #self.diagnostic = pd.read_csv(self.path / "diagnostic.tsv", sep="\t", error_bad_lines=False)
         self.diagnostic_full = pd.read_csv(self.path / "diagnostic-full.tsv", sep="\t", error_bad_lines=False) # is not in the table 3.1
 
-        self.__data_cleanup()
 
     def __data_cleanup(self):
         cols_id = range(8)
