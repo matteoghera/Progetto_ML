@@ -10,6 +10,9 @@ class Tasks:
         self.train=pd.read_csv(self.path / "train.tsv",sep="\t", error_bad_lines=False)
         self.test=pd.read_csv(self.path/ "test.tsv", sep="\t", error_bad_lines=False)
 
+    def data_cleanup(self):
+        pass
+
 class ClassificationTask(Tasks):
     def __init__(self, path):
         super().__init__(path)
@@ -37,14 +40,14 @@ class CoLA(SingleSentenceClassification):
     def __init__(self, path):
         super().__init__(path / "CoLA")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
     def load_dev_test_train(self):
         self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", header=None, error_bad_lines=False)
         self.train = pd.read_csv(self.path / "train.tsv", sep="\t", header=None, error_bad_lines=False)
         self.test = pd.read_csv(self.path / "test.tsv", sep="\t", error_bad_lines=False)
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         self.dev.drop(labels=2, axis=1, inplace=True)
         self.dev.drop(labels=0, axis=1, inplace=True)
         self.dev.rename(columns={1: "label", 3: "sentence"}, inplace=True)
@@ -59,9 +62,9 @@ class SST_2(SingleSentenceClassification):
     def __init__(self, path):
         super().__init__(path / "SST-2")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         self.test.drop(labels="index", axis=1, inplace=True)
 
 
@@ -71,9 +74,9 @@ class RTE(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "RTE")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         self.train.drop(labels="index", axis=1, inplace=True)
         self.dev.drop(labels="index", axis=1, inplace=True)
         self.test.drop(labels="index", axis=1, inplace=True)
@@ -82,9 +85,9 @@ class WNLI(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "WNLI")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         self.train.drop(labels="index", axis=1, inplace=True)
         self.dev.drop(labels="index", axis=1, inplace=True)
         self.test.drop(labels="index", axis=1, inplace=True)
@@ -93,9 +96,9 @@ class QQP(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "QQP")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         cols_id=range(3)
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.train.drop(columns=self.train.columns[cols_id], inplace=True)
@@ -106,12 +109,15 @@ class MRPC(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "MRPC")
         self.load_dev_test_train()
+        self.data_cleanup()
+
+    def load_dev_test_train(self):
+        super().load_dev_test_train()
         #self.dev_ids=pd.read_csv(self.path / "dev_ids.tsv", sep="\t", header=None, error_bad_lines=False)
         self.msr_paraphrase_test=pd.read_csv(self.path / "msr_paraphrase_test.txt", sep="\t", error_bad_lines=False)
         #self.msr_paraphrase_train = pd.read_csv(self.path / "msr_paraphrase_train.txt", sep="\t", error_bad_lines=False)
-        self.__data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         cols_id=[1,2]
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.dev.rename(columns={"Quality": "label", "#1 String": "sentence1", "#2 String": "sentence2"}, inplace=True)
@@ -127,12 +133,15 @@ class SNLI(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "SNLI")
         self.load_dev_test_train()
+        self.data_cleanup()
+
+    def load_dev_test_train(self):
+        super().load_dev_test_train()
         #self.dev_jsonl=self.__from_json("dev.jsonl")
         #self.test_jsonl = self.__from_json("test.jsonl")
         #self.train_jsonl = self.__from_json("train.jsonl")
-        self.__data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         cols_id = range(7)
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
@@ -155,7 +164,7 @@ class MNLI(PairwiseTextClassification):
     def __init__(self, path):
         super().__init__(path / "MNLI")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
     def load_dev_test_train(self):
         dev_matched=pd.read_csv(self.path / "dev_matched.tsv", sep="\t", error_bad_lines=False)
@@ -172,7 +181,7 @@ class MNLI(PairwiseTextClassification):
         self.diagnostic_full = pd.read_csv(self.path / "diagnostic-full.tsv", sep="\t", error_bad_lines=False) # is not in the table 3.1
 
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         cols_id = range(8)
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
@@ -187,7 +196,7 @@ class STS_B(TextSimilarity):
     def __init__(self, path):
         super().__init__(path / "STS-B")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
     def load_dev_test_train(self):
         import csv
@@ -195,7 +204,7 @@ class STS_B(TextSimilarity):
         self.train=pd.read_csv(self.path / "train.tsv",sep="\t", error_bad_lines=False)
         self.test=pd.read_csv(self.path/ "test.tsv", sep="\t", error_bad_lines=False, quoting=csv.QUOTE_NONE) #engine='python')
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         cols_id=range(7)
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
@@ -208,9 +217,9 @@ class QNLI(RelevanceRanking):
     def __init__(self, path):
         super().__init__(path / "QNLI")
         self.load_dev_test_train()
-        self.__data_cleanup()
+        self.data_cleanup()
 
-    def __data_cleanup(self):
+    def data_cleanup(self):
         self.train.drop(labels="index", axis=1, inplace=True)
         self.dev.drop(labels="index", axis=1, inplace=True)
         self.test.drop(labels="index", axis=1, inplace=True)
