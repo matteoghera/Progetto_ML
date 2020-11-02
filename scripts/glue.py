@@ -1,5 +1,6 @@
 import pandas as pd
 from path import Path
+from torch import double
 
 from scripts.tokenizer import DatasetPlus
 
@@ -66,15 +67,15 @@ class TextSimilarity(Tasks):
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
-                                   column_sequence2="sentence2", column_target="score")
+                                   column_sequence2="sentence2", column_target="score", dtype=double)
         self.dev_tokenized = dataset_plus.viewData()
 
         dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
-                                   column_sequence1="sentence1", column_sequence2="sentence2", column_target="score")
+                                   column_sequence1="sentence1", column_sequence2="sentence2", column_target="score", dtype=double)
         self.train_tokenized = dataset_plus.viewData()
 
         dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
-                                   column_sequence2="sentence2")
+                                   column_sequence2="sentence2", dtype=double)
         self.test_tokenized = dataset_plus.viewData()
 
 
