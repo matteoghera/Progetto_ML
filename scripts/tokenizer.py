@@ -57,7 +57,7 @@ class DatasetPlus:
                     text_pair=sequence2,
                     add_special_tokens=True,
                     max_length=self.max_len,
-                    return_token_type_ids=False,
+                    return_token_type_ids=True,
                     pad_to_max_length=True,
                     return_attention_mask=True,
                     return_tensors='pt',
@@ -66,6 +66,7 @@ class DatasetPlus:
                     'sequence1': sequence1,
                     'sequence2': sequence2,
                     'input_ids': encoding['input_ids'].flatten(),
+                    'token_type_ids':encoding['token_type_ids'].flatten(),
                     'attention_mask': encoding['attention_mask'].flatten(),
                     'targets': torch.tensor(target, dtype=torch.long)
                 }
@@ -76,7 +77,7 @@ class DatasetPlus:
                     text=sequence1,
                     add_special_tokens=True,
                     max_length=self.max_len,
-                    return_token_type_ids=False,
+                    return_token_type_ids=True,
                     pad_to_max_length=True,
                     return_attention_mask=True,
                     return_tensors='pt',
@@ -84,6 +85,7 @@ class DatasetPlus:
                 return {
                     'sequence1': sequence1,
                     'input_ids': encoding['input_ids'].flatten(),
+                    'token_type_ids': encoding['token_type_ids'].flatten(),
                     'attention_mask': encoding['attention_mask'].flatten(),
                     'targets': torch.tensor(target, dtype=torch.long)
                 }
@@ -93,7 +95,7 @@ class DatasetPlus:
                     text=sequence1,
                     add_special_tokens=True,
                     max_length=self.max_len,
-                    return_token_type_ids=False,
+                    return_token_type_ids=True,
                     pad_to_max_length=True,
                     return_attention_mask=True,
                     return_tensors='pt',
@@ -101,5 +103,6 @@ class DatasetPlus:
                 return {
                     'sequence1': sequence1,
                     'input_ids': encoding['input_ids'].flatten(),
+                    'token_type_ids': encoding['token_type_ids'].flatten(),
                     'attention_mask': encoding['attention_mask'].flatten(),
                 }
