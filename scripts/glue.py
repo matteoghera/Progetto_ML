@@ -20,6 +20,14 @@ class Tasks:
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         pass
 
+    def get_dev(self):
+        pass
+
+    def get_train(self):
+        pass
+
+    def get_test(self):
+        pass
 
 class ClassificationTask(Tasks):
     def __init__(self, path):
@@ -39,6 +47,15 @@ class SingleSentenceClassification(ClassificationTask):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence")
 
+    def get_dev(self):
+        return self.dev, self.dev_tokenized_data
+
+    def get_train(self):
+        return self.train, self.train_tokenized_data
+
+    def get_test(self):
+        return self.test, self.test_tokenized_data
+
 
 class PairwiseTextClassification(ClassificationTask):
     def __init__(self, path):
@@ -53,7 +70,14 @@ class PairwiseTextClassification(ClassificationTask):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+    def get_dev(self):
+        return self.dev, self.dev_tokenized_data
 
+    def get_train(self):
+        return self.train, self.train_tokenized_data
+
+    def get_test(self):
+        return self.test, self.test_tokenized_data
 
 class TextSimilarity(Tasks):
     def __init__(self, path):
@@ -68,7 +92,14 @@ class TextSimilarity(Tasks):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", dtype=double)
+    def get_dev(self):
+        return self.dev, self.dev_tokenized_data
 
+    def get_train(self):
+        return self.train, self.train_tokenized_data
+
+    def get_test(self):
+        return self.test, self.test_tokenized_data
 
 class RelevanceRanking(Tasks):
     def __init__(self, path):
@@ -82,9 +113,17 @@ class RelevanceRanking(Tasks):
                                    column_sequence1="question", column_sequence2="sentence",
                                    column_target="label_encoding")
 
-        self.test_tokenized = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
                                    column_sequence2="sentence")
 
+    def get_dev(self):
+        return self.dev, self.dev_tokenized_data
+
+    def get_train(self):
+        return self.train, self.train_tokenized_data
+
+    def get_test(self):
+        return self.test, self.test_tokenized_data
 
 ### Single-Sentence Classification tasks
 
