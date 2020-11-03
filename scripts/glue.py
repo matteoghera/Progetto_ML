@@ -31,16 +31,13 @@ class SingleSentenceClassification(ClassificationTask):
         super().__init__(path)
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence",
                                    column_target="label")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence",
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence",
                                    column_target="label")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence")
-        self.test_tokenized = dataset_plus.viewData()
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence")
 
 
 class PairwiseTextClassification(ClassificationTask):
@@ -48,17 +45,14 @@ class PairwiseTextClassification(ClassificationTask):
         super().__init__(path)
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="label")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2", column_target="label")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
-        self.test_tokenized = dataset_plus.viewData()
 
 
 class TextSimilarity(Tasks):
@@ -66,17 +60,14 @@ class TextSimilarity(Tasks):
         super().__init__(path)
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="score", dtype=double)
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2", column_target="score", dtype=double)
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", dtype=double)
-        self.test_tokenized = dataset_plus.viewData()
 
 
 class RelevanceRanking(Tasks):
@@ -84,18 +75,15 @@ class RelevanceRanking(Tasks):
         super().__init__(path)
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
                                    column_sequence2="sentence", column_target="label_encoding")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="question", column_sequence2="sentence",
                                    column_target="label_encoding")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
+        self.test_tokenized = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
                                    column_sequence2="sentence")
-        self.test_tokenized = dataset_plus.viewData()
 
 
 ### Single-Sentence Classification tasks
@@ -150,18 +138,15 @@ class RTE(PairwiseTextClassification):
         self.dev["label_encoding"] = self.dev["label"].map({"not_entailment": 0, "entailment": 1})
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="label_encoding")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2",
                                    column_target="label_encoding")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
-        self.test_tokenized = dataset_plus.viewData()
 
 
 class WNLI(PairwiseTextClassification):
@@ -189,18 +174,15 @@ class QQP(PairwiseTextClassification):
         self.test.drop(labels="id", axis=1, inplace=True)
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
+        self.dev_tokenized_data  = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
                                    column_sequence2="question2", column_target="is_duplicate")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="question1", column_sequence2="question2",
                                    column_target="is_duplicate")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
                                    column_sequence2="question2")
-        self.test_tokenized = dataset_plus.viewData()
 
 
 class MRPC(PairwiseTextClassification):
@@ -231,10 +213,8 @@ class MRPC(PairwiseTextClassification):
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         super().tokenization(tokenizer, max_len, batch_size, num_workers)
-        dataset_plus = DatasetPlus(self.msr_paraphrase_test, tokenizer, max_len, batch_size, num_workers,
+        self.msr_paraphrase_tokenized_data = DatasetPlus(self.msr_paraphrase_test, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2", column_target="label")
-        self.train_tokenized = dataset_plus.viewData()
-
 
 class SNLI(PairwiseTextClassification):
     def __init__(self, path):
@@ -273,18 +253,15 @@ class SNLI(PairwiseTextClassification):
         return data
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="gold_label_encoding")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2",
                                    column_target="gold_label_encoding")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
-        self.test_tokenized = dataset_plus.viewData()
 
 
 class MNLI(PairwiseTextClassification):
@@ -309,18 +286,15 @@ class MNLI(PairwiseTextClassification):
                                            error_bad_lines=False)  # is not # in the table 3.1
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
-        dataset_plus = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="gold_label_encoding")
-        self.dev_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
+        self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2",
                                    column_target="gold_label_encoding")
-        self.train_tokenized = dataset_plus.viewData()
 
-        dataset_plus = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
+        self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
-        self.test_tokenized = dataset_plus.viewData()
 
     def data_cleanup(self):
         cols_id = range(8)
