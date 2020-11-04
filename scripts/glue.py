@@ -48,13 +48,13 @@ class SingleSentenceClassification(ClassificationTask):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence")
 
     def get_dev(self):
-        return self.dev, self.dev_tokenized_data
+        return self.dev, self.dev_tokenized_data.get_dataloader()
 
     def get_train(self):
-        return self.train, self.train_tokenized_data
+        return self.train, self.train_tokenized_data.get_dataloader()
 
     def get_test(self):
-        return self.test, self.test_tokenized_data
+        return self.test, self.test_tokenized_data.get_dataloader()
 
 
 class PairwiseTextClassification(ClassificationTask):
@@ -71,13 +71,13 @@ class PairwiseTextClassification(ClassificationTask):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
     def get_dev(self):
-        return self.dev, self.dev_tokenized_data
+        return self.dev, self.dev_tokenized_data.get_dataloader()
 
     def get_train(self):
-        return self.train, self.train_tokenized_data
+        return self.train, self.train_tokenized_data.get_dataloader()
 
     def get_test(self):
-        return self.test, self.test_tokenized_data
+        return self.test, self.test_tokenized_data.get_dataloader()
 
 class TextSimilarity(Tasks):
     def __init__(self, path):
@@ -93,13 +93,13 @@ class TextSimilarity(Tasks):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", dtype=double)
     def get_dev(self):
-        return self.dev, self.dev_tokenized_data
+        return self.dev, self.dev_tokenized_data.get_dataloader()
 
     def get_train(self):
-        return self.train, self.train_tokenized_data
+        return self.train, self.train_tokenized_data.get_dataloader()
 
     def get_test(self):
-        return self.test, self.test_tokenized_data
+        return self.test, self.test_tokenized_data.get_dataloader()
 
 class RelevanceRanking(Tasks):
     def __init__(self, path):
@@ -117,13 +117,13 @@ class RelevanceRanking(Tasks):
                                    column_sequence2="sentence")
 
     def get_dev(self):
-        return self.dev, self.dev_tokenized_data
+        return self.dev, self.dev_tokenized_data.get_dataloader()
 
     def get_train(self):
-        return self.train, self.train_tokenized_data
+        return self.train, self.train_tokenized_data.get_dataloader()
 
     def get_test(self):
-        return self.test, self.test_tokenized_data
+        return self.test, self.test_tokenized_data.get_dataloader()
 
 ### Single-Sentence Classification tasks
 

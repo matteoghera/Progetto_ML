@@ -41,6 +41,9 @@ class DatasetPlus:
     def viewData(self):
         return next(self.my_dataloader.__iter__())
 
+    def get_dataloader(self):
+        return self.my_dataloader
+
     class DatasetRow(data.Dataset):
         def __init__(self, tokenizer, max_len, sequence1, sequence2=None, targets=None, dtype=torch.long):
             self.sequence1 = sequence1
