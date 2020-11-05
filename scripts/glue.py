@@ -17,6 +17,12 @@ class Tasks:
     def data_cleanup(self):
         pass
 
+    def get_dropout_parameter(self):
+        return 0.1
+
+    def get_name(self):
+        pass
+
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         pass
 
@@ -149,6 +155,11 @@ class CoLA(SingleSentenceClassification):
 
         self.test.drop(labels="index", axis=1, inplace=True)
 
+    def get_dropout_parameter(self):
+        return 0.05
+
+    def get_name(self):
+        return "CoLA"
 
 class SST_2(SingleSentenceClassification):
     def __init__(self, path):
@@ -159,6 +170,8 @@ class SST_2(SingleSentenceClassification):
     def data_cleanup(self):
         self.test.drop(labels="index", axis=1, inplace=True)
 
+    def get_name(self):
+        return "SST-2"
 
 ### Pairwise Text Classification tasks
 
@@ -187,6 +200,8 @@ class RTE(PairwiseTextClassification):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
 
+    def get_name(self):
+        return "RTE"
 
 class WNLI(PairwiseTextClassification):
     def __init__(self, path):
@@ -198,6 +213,9 @@ class WNLI(PairwiseTextClassification):
         self.train.drop(labels="index", axis=1, inplace=True)
         self.dev.drop(labels="index", axis=1, inplace=True)
         self.test.drop(labels="index", axis=1, inplace=True)
+
+    def get_name(self):
+        return "WNLI"
 
 
 class QQP(PairwiseTextClassification):
@@ -222,6 +240,9 @@ class QQP(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
                                    column_sequence2="question2")
+
+    def get_name(self):
+        return "QQP"
 
 
 class MRPC(PairwiseTextClassification):
@@ -254,6 +275,10 @@ class MRPC(PairwiseTextClassification):
         super().tokenization(tokenizer, max_len, batch_size, num_workers)
         self.msr_paraphrase_tokenized_data = DatasetPlus(self.msr_paraphrase_test, tokenizer, max_len, batch_size, num_workers,
                                    column_sequence1="sentence1", column_sequence2="sentence2", column_target="label")
+
+    def get_name(self):
+        return "MRPC"
+
 
 class SNLI(PairwiseTextClassification):
     def __init__(self, path):
@@ -301,6 +326,9 @@ class SNLI(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+
+    def get_name(self):
+        return "SNLI"
 
 
 class MNLI(PairwiseTextClassification):
@@ -350,6 +378,12 @@ class MNLI(PairwiseTextClassification):
         self.train["gold_label_encoding"] = self.train["gold_label"].map(
             {"neutral": 0, "contradiction": 1, "entailment": 2})
 
+    def get_dropout_parameter(self):
+        return 0.3
+
+    def get_name(self):
+        return "MNLI"
+
 
 ### Text Similarity tasks
 
@@ -372,6 +406,9 @@ class STS_B(TextSimilarity):
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
         self.train.drop(columns=self.train.columns[cols_id], inplace=True)
 
+    def get_name(self):
+        return "STS-B"
+
 
 ### Relevance Ranking tasks
 
@@ -388,3 +425,6 @@ class QNLI(RelevanceRanking):
 
         self.train["label_encoding"] = self.train["label"].map({"not_entailment": 0, "entailment": 1})
         self.dev["label_encoding"] = self.dev["label"].map({"not_entailment": 0, "entailment": 1})
+
+    def get_name(self):
+        return "QNLI"
