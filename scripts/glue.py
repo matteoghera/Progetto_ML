@@ -1,8 +1,9 @@
 import pandas as pd
 from path import Path
-from torch import double
+from torch import double, nn
 
 from scripts.tokenizer import DatasetPlus
+from scripts.function import ObjectiveFunction
 
 
 class Tasks:
@@ -35,10 +36,18 @@ class Tasks:
     def get_test(self):
         pass
 
+    def get_objective_function(self, hidden_size):
+        pass
+
+    def get_loss_function(self, hidden_size):
+        pass
+
 class ClassificationTask(Tasks):
     def __init__(self, path):
         super().__init__(path)
 
+    def get_loss_function(self, hidden_size):
+        return nn.CrossEntropyLoss()
 
 class SingleSentenceClassification(ClassificationTask):
     def __init__(self, path):
@@ -61,6 +70,9 @@ class SingleSentenceClassification(ClassificationTask):
 
     def get_test(self):
         return self.test, self.test_tokenized_data.get_dataloader()
+
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=None)
 
 
 class PairwiseTextClassification(ClassificationTask):
@@ -85,6 +97,9 @@ class PairwiseTextClassification(ClassificationTask):
     def get_test(self):
         return self.test, self.test_tokenized_data.get_dataloader()
 
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=None)
+
 class TextSimilarity(Tasks):
     def __init__(self, path):
         super().__init__(path)
@@ -106,6 +121,12 @@ class TextSimilarity(Tasks):
 
     def get_test(self):
         return self.test, self.test_tokenized_data.get_dataloader()
+
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+
+    def get_loss_function(self, hidden_size):
+        return nn.MSELoss()
 
 class RelevanceRanking(Tasks):
     def __init__(self, path):
@@ -130,6 +151,12 @@ class RelevanceRanking(Tasks):
 
     def get_test(self):
         return self.test, self.test_tokenized_data.get_dataloader()
+
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+
+    def get_loss_function(self, hidden_size):
+        pass
 
 ### Single-Sentence Classification tasks
 

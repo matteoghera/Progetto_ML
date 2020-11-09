@@ -1,19 +1,24 @@
 from transformers import BertModel, AdamW, get_linear_schedule_with_warmup
+from transformers.modeling_bert import BertEmbeddings
 from torch import nn
 import torch
 import numpy as np
 
 
 class MT_DNN(nn.Module):
-    def __init__(self, config, max_len, dropout, obj_function):
+    def __init__(self, config, max_len, task):
         # the BERT implementation of Pytorch run the lexicon and the trasformer encoder level
         super(MT_DNN, self).__init__()
         self.bert = BertModel.from_pretrained(config)
         self.max_len = max_len
-        self.dropout = dropout
-        self.out = obj_function
+        self.dropout = nn.Dropout(p=task.get_dropout_parameter())
+        self.obj_function = task.get_objective_function(self.bert.config.hidden_size)  ### not implemented
 
     def forward(self, input_ids, attention_mask, token_type_ids, position_ids, encoder_hidden_states):
+        embeddings = BertEmbeddings(self.bert.config)
+        embedding_output = embeddings(
+            input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, inputs_embeds=None
+        )
         last_hidden_state, pooled_output = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -22,7 +27,7 @@ class MT_DNN(nn.Module):
             encoder_hidden_states=encoder_hidden_states
         )
         pooled_output = self.dropout(pooled_output)
-        pooled_output = self.out(pooled_output)
+        pooled_output = self.obj_function(last_hidden_state, pooled_output, embedding_output)
         return last_hidden_state, pooled_output
 
 
@@ -30,9 +35,7 @@ class ModelManager:
     def __init__(self, task, config, max_len, device, epochs):
         self.task = task
 
-        dropout = nn.Dropout(p=self.task.get_dropout_parameter())
-        obj_function = self.task.get_objective_function()  ### not implemented
-        model = MT_DNN(config, max_len, dropout, obj_function)
+        model = MT_DNN(config, max_len, task)
         self.model = model.to(device)
 
         _, dev_tokenized_data_loader = task.get_dev()
