@@ -2,6 +2,9 @@ import pandas as pd
 from path import Path
 from torch import double, nn
 
+from sklearn.metrics import accuracy_score, matthews_corrcoef
+from scipy.stats import pearsonr
+
 from scripts.tokenizer import DatasetPlus
 from scripts.function import ObjectiveFunction
 
@@ -42,6 +45,15 @@ class Tasks:
     def get_loss_function(self, hidden_size):
         pass
 
+    def print_metrics(loss, acc, phase):
+        if phase.__eq__("train"):
+            print(f'Train loss {loss} accuracy {acc}')
+        else:
+            print(f'Validation loss {loss} accuracy {acc}')
+
+    def compute_matric_value(preds, targets, n_examples):
+        return accuracy_score(targets,preds)*(len(targets)/n_examples)
+
 class ClassificationTask(Tasks):
     def __init__(self, path):
         super().__init__(path)
@@ -72,7 +84,7 @@ class SingleSentenceClassification(ClassificationTask):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=None)
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
 
 
 class PairwiseTextClassification(ClassificationTask):
@@ -98,7 +110,7 @@ class PairwiseTextClassification(ClassificationTask):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=None)
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
 
 class TextSimilarity(Tasks):
     def __init__(self, path):
@@ -156,7 +168,7 @@ class RelevanceRanking(Tasks):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
 
     def get_loss_function(self, hidden_size):
-        pass
+        return nn.CrossEntropyLoss()
 
 ### Single-Sentence Classification tasks
 
@@ -187,6 +199,15 @@ class CoLA(SingleSentenceClassification):
 
     def get_name(self):
         return "CoLA"
+
+    def print_metrics(loss, acc, phase):
+        if phase.__eq__("train"):
+            print(f'Train loss {loss} Matthews corr. {acc}')
+        else:
+            print(f'Validation loss {loss} Matthews corr. {acc}')
+
+    def compute_matric_value(preds, targets, n_examples):
+        return matthews_corrcoef(targets, preds)
 
 class SST_2(SingleSentenceClassification):
     def __init__(self, path):
@@ -435,6 +456,16 @@ class STS_B(TextSimilarity):
 
     def get_name(self):
         return "STS-B"
+
+    def print_metrics(loss, acc, phase):
+        if phase.__eq__("train"):
+            print(f'Train loss {loss} pearson {acc}')
+        else:
+            print(f'Validation loss {loss} pearson {acc}')
+
+    def compute_matric_value(preds, targets, n_examples):
+        r, _=pearsonr(preds, targets)
+        return r
 
 
 ### Relevance Ranking tasks
