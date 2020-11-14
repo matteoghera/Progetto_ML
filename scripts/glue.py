@@ -42,7 +42,7 @@ class Tasks:
     def get_objective_function(self, hidden_size):
         pass
 
-    def get_loss_function(self, hidden_size):
+    def get_loss_function(self):
         pass
 
     def print_metrics(loss, acc, phase):
@@ -58,7 +58,7 @@ class ClassificationTask(Tasks):
     def __init__(self, path):
         super().__init__(path)
 
-    def get_loss_function(self, hidden_size):
+    def get_loss_function(self):
         return nn.CrossEntropyLoss()
 
 class SingleSentenceClassification(ClassificationTask):
@@ -137,7 +137,7 @@ class TextSimilarity(Tasks):
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["score"].nunique())
 
-    def get_loss_function(self, hidden_size):
+    def get_loss_function(self):
         return nn.MSELoss()
 
 class RelevanceRanking(Tasks):
@@ -167,7 +167,7 @@ class RelevanceRanking(Tasks):
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label_encoding"].nunique())
 
-    def get_loss_function(self, hidden_size):
+    def get_loss_function(self):
         return nn.CrossEntropyLoss()
 
 

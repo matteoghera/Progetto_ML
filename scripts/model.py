@@ -108,6 +108,7 @@ class ModellingHelper:
             targets = d['targets'].to(self.device)
 
             encoder_hidden_states, pooled_output = self.model(
+                task=current_task,
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 token_type_ids=token_type_ids
@@ -146,6 +147,7 @@ class ModellingHelper:
                 targets = d['targets'].to(self.device)
 
                 encoder_hidden_states, pooled_output = self.model(
+                    task=current_task,
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids
