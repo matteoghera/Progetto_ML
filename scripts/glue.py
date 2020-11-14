@@ -135,7 +135,7 @@ class TextSimilarity(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["score"].nunique())
 
     def get_loss_function(self, hidden_size):
         return nn.MSELoss()
@@ -165,10 +165,11 @@ class RelevanceRanking(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label_encoding"].nunique())
 
     def get_loss_function(self, hidden_size):
         return nn.CrossEntropyLoss()
+
 
 ### Single-Sentence Classification tasks
 
@@ -248,6 +249,9 @@ class RTE(PairwiseTextClassification):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
 
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label_encoding"].nunique())
+
     def get_name(self):
         return "RTE"
 
@@ -288,6 +292,9 @@ class QQP(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
                                    column_sequence2="question2")
+
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["is_duplicate"].nunique())
 
     def get_name(self):
         return "QQP"
@@ -375,6 +382,9 @@ class SNLI(PairwiseTextClassification):
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
 
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["gold_label_encoding"].nunique())
+
     def get_name(self):
         return "SNLI"
 
@@ -425,6 +435,9 @@ class MNLI(PairwiseTextClassification):
             {"neutral": 0, "contradiction": 1, "entailment": 2})
         self.train["gold_label_encoding"] = self.train["gold_label"].map(
             {"neutral": 0, "contradiction": 1, "entailment": 2})
+
+    def get_objective_function(self, hidden_size):
+        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["gold_label_encoding"].nunique())
 
     def get_dropout_parameter(self):
         return 0.3

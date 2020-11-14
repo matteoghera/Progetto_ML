@@ -1,0 +1,10 @@
+psutil
+torch
+path
+transformers==3.4.0
+numpy
+seaborn
+scikit-learn
+pandas
+matplotlib
+scipy
