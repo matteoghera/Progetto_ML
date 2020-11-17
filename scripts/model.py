@@ -84,10 +84,12 @@ class ModellingHelper:
                                                            model_manager.loss_fn, model_manager.optimizer,
                                                            model_manager.scheduler, len(dev))
                 model_manager.save_train_metrics(epoch, train_loss, train_acc, "train")
+                del dev, dev_tokenized_data_loader, train_acc, train_loss
 
                 val, val_tokenized_data_loader=current_task.get_dev()
                 val_acc, val_loss=self.__eval_model(current_task, val_tokenized_data_loader, model_manager.loss_fn, len(val))
                 model_manager.save_train_metrics(epoch, val_loss, val_acc, "eval")
+                del val, val_tokenized_data_loader, train_acc, train_loss
 
     def __train_epoch(self,
                       current_task,
@@ -118,9 +120,10 @@ class ModellingHelper:
             loss = loss_fn(pooled_output, targets)
             losses.append(loss.item())
 
-            accs.append(current_task.compute_matric_value(preds, targets, n_examples)) ##not implemented
+            accs.append(current_task.compute_matric_value(preds, targets, n_examples))
 
             loss.backward()
+            del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss
             nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()
