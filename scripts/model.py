@@ -10,10 +10,11 @@ class MT_DNN(nn.Module):
         super(MT_DNN, self).__init__()
         self.bert = BertModel.from_pretrained(config)  ## only one BERT model
         self.max_len = max_len
+        self.obj_function=None
 
     def forward(self, task, input_ids, attention_mask, token_type_ids):
         dropout = nn.Dropout(p=task.get_dropout_parameter())
-        obj_function = task.get_objective_function(self.bert.config.hidden_size)
+        self.obj_function = task.get_objective_function(self.bert.config.hidden_size)
 
         last_hidden_state, pooled_output = self.bert(
             input_ids=input_ids,
@@ -21,7 +22,7 @@ class MT_DNN(nn.Module):
             token_type_ids=token_type_ids
         )
         pooled_output = dropout(pooled_output)
-        pooled_output = obj_function(pooled_output)
+        pooled_output = self.obj_function(pooled_output)
         return last_hidden_state, pooled_output
 
 
