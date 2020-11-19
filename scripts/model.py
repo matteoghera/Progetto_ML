@@ -10,19 +10,16 @@ class MT_DNN(nn.Module):
         super(MT_DNN, self).__init__()
         self.bert = BertModel.from_pretrained(config)  ## only one BERT model
         self.max_len = max_len
-        self.obj_function=None
 
-    def forward(self, task, input_ids, attention_mask, token_type_ids):
-        dropout = nn.Dropout(p=task.get_dropout_parameter())
-        self.obj_function = task.get_objective_function(self.bert.config.hidden_size)
-
+    def forward(self,input_ids, attention_mask, token_type_ids, p, obj_function):
+        dropout = nn.Dropout(p=p)
         last_hidden_state, pooled_output = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
         pooled_output = dropout(pooled_output)
-        pooled_output = self.obj_function(pooled_output)
+        pooled_output = obj_function(**pooled_output)
         return last_hidden_state, pooled_output
 
 
@@ -110,11 +107,14 @@ class ModellingHelper:
             token_type_ids = d["token_type_ids"].to(self.device)
             targets = d['targets'].to(self.device)
 
+            obj_function=current_task.get_objective_function(self.model.bert.config.hidden_size)
+            p=current_task.get_dropout_parameter()
             encoder_hidden_states, pooled_output = self.model(
-                task=current_task,
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                token_type_ids=token_type_ids
+                token_type_ids=token_type_ids,
+                obj_function=obj_function,
+                p=p
             )
 
             _, preds = torch.max(pooled_output, dim=1)
@@ -150,11 +150,15 @@ class ModellingHelper:
                 token_type_ids = d["token_type_ids"].to(self.device)
                 targets = d['targets'].to(self.device)
 
+                obj_function = current_task.get_objective_function(self.model.bert.config.hidden_size)
+                p = current_task.get_dropout_parameter()
                 encoder_hidden_states, pooled_output = self.model(
                     task=current_task,
                     input_ids=input_ids,
                     attention_mask=attention_mask,
-                    token_type_ids=token_type_ids
+                    token_type_ids=token_type_ids,
+                    obj_function=obj_function,
+                    p=p
                 )
 
                 _, preds = torch.max(pooled_output, dim=1)
