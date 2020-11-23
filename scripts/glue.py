@@ -498,7 +498,7 @@ class STS_B(TextSimilarity):
 
     def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
-            print(f'Train loss {loss} pearson {acc}')
+            print(f'rain loss {loss} pearson {acc}')
         else:
             print(f'Validation loss {loss} pearson {acc}')
 

@@ -71,11 +71,11 @@ class ModellingHelper:
         for task in self.tasks:
             self.model_manager_list.append(ModelManager(task, self.model, epochs))
 
-
         for epoch in range(epochs):
             print(f'Epoch {epoch + 1}/{epochs}')
             print('-' * 10)
 
+            print("\tTRAINING PHASE")
             for model_manager in self.model_manager_list:
                 current_task=model_manager.task
                 print(current_task.get_name())
@@ -84,13 +84,22 @@ class ModellingHelper:
                 train_acc, train_loss = self.__train_epoch(current_task,dev_tokenized_data_loader,
                                                            model_manager.loss_fn, model_manager.optimizer,
                                                            model_manager.scheduler, len(dev))
+                print("Matteo1")
                 model_manager.save_train_metrics(epoch, train_loss, train_acc, "train")
+                print("Matteo2")
                 del dev, dev_tokenized_data_loader, train_acc, train_loss
+                print("Matteo3")
+                
+            print("\tVALIDATION PHASE")
+            for model_manager in self.model_manager_list:
+                current_task = model_manager.task
+                print(current_task.get_name())
 
                 val, val_tokenized_data_loader=current_task.get_dev()
-                val_acc, val_loss=self.__eval_model(current_task, val_tokenized_data_loader, model_manager.loss_fn, len(val))
+                val_acc, val_loss=self.__eval_model(current_task, val_tokenized_data_loader,
+                                                    model_manager.loss_fn, len(val))
                 model_manager.save_train_metrics(epoch, val_loss, val_acc, "eval")
-                del val, val_tokenized_data_loader, train_acc, train_loss
+                del val, val_tokenized_data_loader, val_acc, val_loss
 
     def __train_epoch(self,
                       current_task,
