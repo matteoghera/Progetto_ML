@@ -8,29 +8,27 @@ from scipy.stats import pearsonr
 from scripts.tokenizer import DatasetPlus
 
 
-class ObjectiveFunction:
+class ObjectiveFunction(nn.Module):
     def __init__(self, obj_task, hidden_size=None, n_classes=None, K=1):
+        super(ObjectiveFunction, self).__init__()
         self.task=obj_task
-        self.hidden_size=hidden_size
-        self.n_classes=n_classes
-        self.K=K
 
-    def __call__(self, *pooled_output):
-        linear = nn.Linear(self.hidden_size, self.n_classes, bias=False)
-        pooled_output = linear(pooled_output)
+        self.linear = nn.Linear(hidden_size, n_classes, bias=False)
+        self.softmax = nn.Softmax(dim=1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, pooled_output):
+        pooled_output = self.linear(pooled_output)
         if isinstance(self.task, SingleSentenceClassification):
-            softmax=nn.Softmax(dim=1)
-            pooled_output=softmax(pooled_output)
+            pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, PairwiseTextClassification):
-            softmax=nn.Softmax(dim=1)
-            pooled_output=softmax(pooled_output)
+            pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, TextSimilarity):
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
-            sigmoid=nn.Sigmoid()
-            pooled_output=sigmoid(pooled_output)
+            pooled_output=self.sigmoid(pooled_output)
             return pooled_output
         else:
             raise TypeError()
@@ -73,13 +71,13 @@ class Tasks:
     def get_loss_function(self):
         pass
 
-    def print_metrics(loss, acc, phase):
+    def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
             print(f'Train loss {loss} accuracy {acc}')
         else:
             print(f'Validation loss {loss} accuracy {acc}')
 
-    def compute_matric_value(preds, targets, n_examples):
+    def compute_matric_value(self, preds, targets, n_examples):
         return accuracy_score(targets,preds)*(len(targets)/n_examples)
 
 class ClassificationTask(Tasks):
@@ -229,13 +227,13 @@ class CoLA(SingleSentenceClassification):
     def get_name(self):
         return "CoLA"
 
-    def print_metrics(loss, acc, phase):
+    def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
             print(f'Train loss {loss} Matthews corr. {acc}')
         else:
             print(f'Validation loss {loss} Matthews corr. {acc}')
 
-    def compute_matric_value(preds, targets, n_examples):
+    def compute_matric_value(self, preds, targets, n_examples):
         return matthews_corrcoef(targets, preds)
 
 class SST_2(SingleSentenceClassification):
@@ -498,13 +496,13 @@ class STS_B(TextSimilarity):
     def get_name(self):
         return "STS-B"
 
-    def print_metrics(loss, acc, phase):
+    def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
             print(f'Train loss {loss} pearson {acc}')
         else:
             print(f'Validation loss {loss} pearson {acc}')
 
-    def compute_matric_value(preds, targets, n_examples):
+    def compute_matric_value(self,preds, targets, n_examples):
         r, _=pearsonr(preds, targets)
         return r
 

@@ -4,6 +4,9 @@ import torch
 import numpy as np
 
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
 class MT_DNN(nn.Module):
     def __init__(self, config, max_len):
         # the BERT implementation of Pytorch run the lexicon and the trasformer encoder level
@@ -12,19 +15,19 @@ class MT_DNN(nn.Module):
         self.max_len = max_len
 
     def forward(self,input_ids, attention_mask, token_type_ids, p, obj_function):
-        dropout = nn.Dropout(p=p)
+        dropout = nn.Dropout(p=p).to(device)
         last_hidden_state, pooled_output = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
         pooled_output = dropout(pooled_output)
-        pooled_output = obj_function(**pooled_output)
+        pooled_output = obj_function(pooled_output)
         return last_hidden_state, pooled_output
 
 
 class ModelManager:
-    def __init__(self, task, model, device, epochs):
+    def __init__(self, task, model, epochs):
         self.task = task
 
         _, dev_tokenized_data_loader = task.get_dev()
@@ -59,14 +62,14 @@ class ModellingHelper:
         self.config = config
         self.tasks = tasks  ### tasks=[cola, sst_2, mnli, rte, wnli, qqp, mrpc, snli, sts_b, qnli]
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
         self.model = MT_DNN(config, max_len)
-        self.model = self.model.to(self.device)
+        self.model = self.model.to(device)
 
     def train(self, epochs):
         self.model_manager_list = []
         for task in self.tasks:
-            self.model_manager_list.append(ModelManager(task, self.model, self.device, epochs))
+            self.model_manager_list.append(ModelManager(task, self.model, epochs))
 
 
         for epoch in range(epochs):
@@ -102,12 +105,12 @@ class ModellingHelper:
         losses = []
         accs=[]
         for d in data_loader:
-            input_ids = d['input_ids'].to(self.device)
-            attention_mask = d['attention_mask'].to(self.device)
-            token_type_ids = d["token_type_ids"].to(self.device)
-            targets = d['targets'].to(self.device)
+            input_ids = d['input_ids'].to(device)
+            attention_mask = d['attention_mask'].to(device)
+            token_type_ids = d["token_type_ids"].to(device)
+            targets = d['targets'].to(device)
 
-            obj_function=current_task.get_objective_function(self.model.bert.config.hidden_size)
+            obj_function=current_task.get_objective_function(self.model.bert.config.hidden_size).to(device)
             p=current_task.get_dropout_parameter()
             encoder_hidden_states, pooled_output = self.model(
                 input_ids=input_ids,
@@ -121,10 +124,10 @@ class ModellingHelper:
             loss = loss_fn(pooled_output, targets)
             losses.append(loss.item())
 
-            accs.append(current_task.compute_matric_value(preds, targets, n_examples))
+            accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
 
             loss.backward()
-            del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss
+            del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss, obj_function, p
             nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()
@@ -145,15 +148,14 @@ class ModellingHelper:
         accs=[]
         with torch.no_grad():
             for d in data_loader:
-                input_ids = d['input_ids'].to(self.device)
-                attention_mask = d['attention_mask'].to(self.device)
-                token_type_ids = d["token_type_ids"].to(self.device)
-                targets = d['targets'].to(self.device)
+                input_ids = d['input_ids'].to(device)
+                attention_mask = d['attention_mask'].to(device)
+                token_type_ids = d["token_type_ids"].to(device)
+                targets = d['targets'].to(device)
 
-                obj_function = current_task.get_objective_function(self.model.bert.config.hidden_size)
+                obj_function = current_task.get_objective_function(self.model.bert.config.hidden_size).to(device)
                 p = current_task.get_dropout_parameter()
                 encoder_hidden_states, pooled_output = self.model(
-                    task=current_task,
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids,
@@ -165,5 +167,6 @@ class ModellingHelper:
                 loss = loss_fn(pooled_output, targets)
 
                 losses.append(loss.item())
-                accs.append(current_task.compute_matric_value(preds, targets, n_examples))  ##not implemented
+                accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
+                del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss, obj_function, p
         return np.mean(accs), np.mean(losses)
