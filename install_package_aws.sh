@@ -4,6 +4,7 @@ set -e
 
 # OVERVIEW
 # This script installs a single pip package in a single SageMaker conda environments.
+# chmod +x install_package_aws.sh
 
 sudo -u ec2-user -i <<'EOF'
 # PARAMETER
