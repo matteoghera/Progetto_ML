@@ -94,7 +94,7 @@ class ModellingHelper:
                 current_task = model_manager.task
                 print(current_task.get_name())
 
-                val, val_tokenized_data_loader=current_task.get_dev()
+                val, val_tokenized_data_loader=current_task.get_train()
                 val_acc, val_loss=self.__eval_model(current_task, val_tokenized_data_loader,
                                                     model_manager.loss_fn, len(val))
                 model_manager.save_train_metrics(epoch, val_loss, val_acc, "eval")
@@ -132,11 +132,11 @@ class ModellingHelper:
                 obj_function=obj_function,
                 p=p
             )
-
-            _, preds = torch.max(pooled_output, dim=1)
+            preds=current_task.predict(pooled_output)
             loss = loss_fn(pooled_output, targets)
             losses.append(loss.item())
 
+            print(f'Pred: {preds} \t targets: {targets}')
             accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
 
             loss.backward()
@@ -175,10 +175,8 @@ class ModellingHelper:
                     obj_function=obj_function,
                     p=p
                 )
-
-                _, preds = torch.max(pooled_output, dim=1)
+                preds=current_task.predict(pooled_output)
                 loss = loss_fn(pooled_output, targets)
-
                 losses.append(loss.item())
                 accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
                 del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss, obj_function, p

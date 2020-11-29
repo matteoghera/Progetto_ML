@@ -1,6 +1,7 @@
 import pandas as pd
 from path import Path
-from torch import double, nn
+from torch import float32, nn
+import torch
 
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 from scipy.stats import pearsonr
@@ -9,26 +10,28 @@ from scripts.tokenizer import DatasetPlus
 
 
 class ObjectiveFunction(nn.Module):
-    def __init__(self, obj_task, hidden_size=None, n_classes=None, K=1):
+    def __init__(self, obj_task, hidden_size, n_classes=None, max_value=None, K=1):
         super(ObjectiveFunction, self).__init__()
         self.task=obj_task
+        if n_classes==None:
+            self.linear = nn.Linear(hidden_size, 1, bias=False)
+        else:
+            self.linear = nn.Linear(hidden_size, n_classes, bias=False)
+        self.max_value=max_value
 
-        self.linear = nn.Linear(hidden_size, n_classes, bias=False)
         self.softmax = nn.Softmax(dim=1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, pooled_output):
         pooled_output = self.linear(pooled_output)
-        if isinstance(self.task, SingleSentenceClassification):
-            pooled_output=self.softmax(pooled_output)
-            return pooled_output
-        elif isinstance(self.task, PairwiseTextClassification):
+        if isinstance(self.task, ClassificationTask):
             pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, TextSimilarity):
+            pooled_output=(self.max_value+2)*self.sigmoid(pooled_output)-1
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
-            pooled_output=self.sigmoid(pooled_output)
+            pooled_output=self.softmax(pooled_output)
             return pooled_output
         else:
             raise TypeError()
@@ -71,6 +74,9 @@ class Tasks:
     def get_loss_function(self):
         pass
 
+    def predict(self, pooled_output):
+        pass
+
     def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
             print(f'Train loss {loss} accuracy {acc}')
@@ -86,6 +92,10 @@ class ClassificationTask(Tasks):
 
     def get_loss_function(self):
         return nn.CrossEntropyLoss()
+
+    def predict(self, pooled_output):
+        _, preds = torch.max(pooled_output, dim=1)
+        return preds
 
 class SingleSentenceClassification(ClassificationTask):
     def __init__(self, path):
@@ -110,7 +120,7 @@ class SingleSentenceClassification(ClassificationTask):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+        return ObjectiveFunction(self, hidden_size, n_classes=self.dev["label"].nunique())
 
 
 class PairwiseTextClassification(ClassificationTask):
@@ -136,7 +146,7 @@ class PairwiseTextClassification(ClassificationTask):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label"].nunique())
+        return ObjectiveFunction(self, hidden_size, n_classes=self.dev["label"].nunique())
 
 class TextSimilarity(Tasks):
     def __init__(self, path):
@@ -144,13 +154,13 @@ class TextSimilarity(Tasks):
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
-                                   column_sequence2="sentence2", column_target="score", dtype=double)
+                                   column_sequence2="sentence2", column_target="score", dtype=float32)
 
         self.train_tokenized_data = DatasetPlus(self.train, tokenizer, max_len, batch_size, num_workers,
-                                   column_sequence1="sentence1", column_sequence2="sentence2", column_target="score", dtype=double)
+                                   column_sequence1="sentence1", column_sequence2="sentence2", column_target="score", dtype=float32)
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
-                                   column_sequence2="sentence2", dtype=double)
+                                   column_sequence2="sentence2", dtype=float32)
     def get_dev(self):
         return self.dev, self.dev_tokenized_data.get_dataloader()
 
@@ -161,10 +171,24 @@ class TextSimilarity(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["score"].nunique())
+        return ObjectiveFunction(self, hidden_size=hidden_size, max_value=self.dev["score"].max())
 
     def get_loss_function(self):
-        return nn.MSELoss()
+        return self.TextSimilarityLoss()
+
+    class TextSimilarityLoss(nn.Module):
+        def __init__(self):
+            super(TextSimilarity.TextSimilarityLoss, self).__init__()
+            self.loss=nn.MSELoss()
+
+        def forward(self, input, target):
+            target=torch.reshape(target, (target.shape[0], 1))
+            return self.loss(input, target)
+
+    def predict(self, pooled_output):
+        return torch.reshape(pooled_output, (-1,))
+
+
 
 class RelevanceRanking(Tasks):
     def __init__(self, path):
@@ -191,10 +215,14 @@ class RelevanceRanking(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label_encoding"].nunique())
+        return ObjectiveFunction(self, hidden_size, n_classes=self.dev["label_encoding"].nunique())
 
     def get_loss_function(self):
         return nn.CrossEntropyLoss()
+
+    def predict(self, pooled_output):
+        _, preds = torch.max(pooled_output, dim=1)
+        return preds
 
 
 ### Single-Sentence Classification tasks
@@ -492,6 +520,11 @@ class STS_B(TextSimilarity):
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
         self.train.drop(columns=self.train.columns[cols_id], inplace=True)
+
+        self.dev.dropna(inplace=True)
+        self.test.dropna(inplace=True)
+        self.train.dropna(inplace=True)
+
 
     def get_name(self):
         return "STS-B"
