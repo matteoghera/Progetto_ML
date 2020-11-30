@@ -14,13 +14,14 @@ class ObjectiveFunction(nn.Module):
         super(ObjectiveFunction, self).__init__()
         self.task=obj_task
         if n_classes==None:
-            self.linear = nn.Linear(hidden_size, 1, bias=False)
+           self.linear = nn.Linear(hidden_size, 1, bias=False)
         else:
             self.linear = nn.Linear(hidden_size, n_classes, bias=False)
         self.max_value=max_value
 
         self.softmax = nn.Softmax(dim=1)
         self.sigmoid = nn.Sigmoid()
+        self.relu=nn.ReLU()
 
     def forward(self, pooled_output):
         pooled_output = self.linear(pooled_output)
@@ -28,7 +29,8 @@ class ObjectiveFunction(nn.Module):
             pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, TextSimilarity):
-            pooled_output=(self.max_value+2)*self.sigmoid(pooled_output)-1
+            pooled_output=self.relu((self.max_value+1)*self.sigmoid(pooled_output)-1)
+            pooled_output=torch.round(pooled_output*10)/10
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
             pooled_output=self.softmax(pooled_output)
@@ -79,9 +81,9 @@ class Tasks:
 
     def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
-            print(f'Train loss {loss} accuracy {acc}')
+            print(f'Train Cross Entropy {loss} accuracy {acc}')
         else:
-            print(f'Validation loss {loss} accuracy {acc}')
+            print(f'Validation Cross Entropy {loss} accuracy {acc}')
 
     def compute_matric_value(self, preds, targets, n_examples):
         return accuracy_score(targets,preds)*(len(targets)/n_examples)
@@ -171,7 +173,7 @@ class TextSimilarity(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size=hidden_size, max_value=self.dev["score"].max())
+        return ObjectiveFunction(self, hidden_size, max_value=self.dev["score"].max())
 
     def get_loss_function(self):
         return self.TextSimilarityLoss()
@@ -187,6 +189,7 @@ class TextSimilarity(Tasks):
 
     def predict(self, pooled_output):
         return torch.reshape(pooled_output, (-1,))
+
 
 
 
@@ -257,9 +260,9 @@ class CoLA(SingleSentenceClassification):
 
     def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
-            print(f'Train loss {loss} Matthews corr. {acc}')
+            print(f'Train Cross Entropy {loss} Matthews corr. {acc}')
         else:
-            print(f'Validation loss {loss} Matthews corr. {acc}')
+            print(f'Validation Cross Entropy {loss} Matthews corr. {acc}')
 
     def compute_matric_value(self, preds, targets, n_examples):
         return matthews_corrcoef(targets, preds)
@@ -531,9 +534,9 @@ class STS_B(TextSimilarity):
 
     def print_metrics(self, loss, acc, phase):
         if phase.__eq__("train"):
-            print(f'rain loss {loss} pearson {acc}')
+            print(f'Train MSE {loss} pearson {acc}')
         else:
-            print(f'Validation loss {loss} pearson {acc}')
+            print(f'Validation MSE {loss} pearson {acc}')
 
     def compute_matric_value(self,preds, targets, n_examples):
         r, _=pearsonr(preds, targets)
