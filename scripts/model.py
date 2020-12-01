@@ -54,7 +54,7 @@ class ModelManager:
         model=MT_DNN(self.encoder, self.task.get_objective_function(encoder.hidden_size), self.task.get_dropout_parameter())
         self.model=model.to(device)
 
-        _, dev_tokenized_data_loader = task.get_train()
+        _, dev_tokenized_data_loader = task.get_dev()
 
         self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
         total_steps = len(dev_tokenized_data_loader) * epochs
