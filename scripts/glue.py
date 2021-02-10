@@ -10,17 +10,16 @@ from scripts.tokenizer import DatasetPlus
 
 
 class ObjectiveFunction(nn.Module):
-    def __init__(self, obj_task, hidden_size, n_classes=None, max_value=None, K=1):
+    def __init__(self, obj_task, hidden_size, n_classes=None, max_value=None):
         super(ObjectiveFunction, self).__init__()
         self.task=obj_task
-        if n_classes==None:
+        if n_classes is None:
            self.linear = nn.Linear(hidden_size, 1, bias=False)
         else:
             self.linear = nn.Linear(hidden_size, n_classes, bias=False)
         self.max_value=max_value
 
         self.softmax = nn.Softmax(dim=1)
-        self.sigmoid = nn.Sigmoid()
         self.relu=nn.ReLU()
 
     def forward(self, pooled_output):
@@ -29,8 +28,8 @@ class ObjectiveFunction(nn.Module):
             pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, TextSimilarity):
-            pooled_output=self.relu((self.max_value+1)*self.sigmoid(pooled_output)-1)
-            pooled_output=torch.round(pooled_output*10)/10
+            #pooled_output=self.relu((self.max_value+1)*self.sigmoid(pooled_output)-1)
+            #pooled_output=torch.round(pooled_output*10)/10
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
             pooled_output=self.softmax(pooled_output)
@@ -295,6 +294,8 @@ class RTE(PairwiseTextClassification):
         self.train["label_encoding"] = self.train["label"].map({"not_entailment": 0, "entailment": 1})
         self.dev["label_encoding"] = self.dev["label"].map({"not_entailment": 0, "entailment": 1})
 
+        self.train.dropna(inplace=True)
+
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", column_target="label_encoding")
@@ -366,16 +367,16 @@ class MRPC(PairwiseTextClassification):
     def load_dev_test_train(self):
         super().load_dev_test_train()
         # self.dev_ids=pd.read_csv(self.path / "dev_ids.tsv", sep="\t", header=None, error_bad_lines=False)
-        self.msr_paraphrase_test = pd.read_csv(self.path / "msr_paraphrase_test.txt", sep="\t", error_bad_lines=False)
+        #self.msr_paraphrase_test = pd.read_csv(self.path / "msr_paraphrase_test.txt", sep="\t", error_bad_lines=False)
         # self.msr_paraphrase_train = pd.read_csv(self.path / "msr_paraphrase_train.txt", sep="\t", error_bad_lines=False)
 
     def data_cleanup(self):
         cols_id = [1, 2]
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.dev.rename(columns={"Quality": "label", "#1 String": "sentence1", "#2 String": "sentence2"}, inplace=True)
-        self.msr_paraphrase_test.drop(columns=self.msr_paraphrase_test.columns[cols_id], inplace=True)
-        self.msr_paraphrase_test.rename(
-            columns={"Quality": "label", "#1 String": "sentence1", "#2 String": "sentence2"}, inplace=True)
+        #self.msr_paraphrase_test.drop(columns=self.msr_paraphrase_test.columns[cols_id], inplace=True)
+        #self.msr_paraphrase_test.rename(
+        #    columns={"Quality": "label", "#1 String": "sentence1", "#2 String": "sentence2"}, inplace=True)
         self.train.drop(columns=self.train.columns[cols_id], inplace=True)
         self.train.rename(columns={"Quality": "label", "#1 String": "sentence1", "#2 String": "sentence2"},
                           inplace=True)
@@ -383,10 +384,13 @@ class MRPC(PairwiseTextClassification):
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
         self.test.rename(columns={"#1 String": "sentence1", "#2 String": "sentence2"}, inplace=True)
 
+        self.train.dropna(inplace=True)
+
+
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         super().tokenization(tokenizer, max_len, batch_size, num_workers)
-        self.msr_paraphrase_tokenized_data = DatasetPlus(self.msr_paraphrase_test, tokenizer, max_len, batch_size, num_workers,
-                                   column_sequence1="sentence1", column_sequence2="sentence2", column_target="label")
+        #self.msr_paraphrase_tokenized_data = DatasetPlus(self.msr_paraphrase_test, tokenizer, max_len, batch_size, num_workers,
+        #                           column_sequence1="sentence1", column_sequence2="sentence2", column_target="label")
 
     def get_name(self):
         return "MRPC"
@@ -414,6 +418,8 @@ class SNLI(PairwiseTextClassification):
             {"neutral": 0, "contradiction": 1, "entailment": 2})
         self.train["gold_label_encoding"] = self.train["gold_label"].map(
             {"neutral": 0, "contradiction": 1, "entailment": 2})
+
+        self.train.dropna(inplace=True)
 
     def __from_json(self, file_name):
         import re
@@ -464,8 +470,9 @@ class MNLI(PairwiseTextClassification):
         self.train = pd.read_csv(self.path / "train.tsv", sep="\t", error_bad_lines=False)
 
         # self.diagnostic = pd.read_csv(self.path / "diagnostic.tsv", sep="\t", error_bad_lines=False)
-        self.diagnostic_full = pd.read_csv(self.path / "diagnostic-full.tsv", sep="\t",
-                                           error_bad_lines=False)  # is not # in the table 3.1
+        #self.diagnostic_full = pd.read_csv(self.path / "diagnostic-full.tsv", sep="\t",
+        #                                   error_bad_lines=False)  # is not # in the table 3.1
+
 
     def tokenization(self, tokenizer, max_len, batch_size, num_workers):
         self.dev_tokenized_data = DatasetPlus(self.dev, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
@@ -483,15 +490,17 @@ class MNLI(PairwiseTextClassification):
         self.dev.drop(columns=self.dev.columns[cols_id], inplace=True)
         self.test.drop(columns=self.test.columns[cols_id], inplace=True)
         self.train.drop(columns=self.train.columns[cols_id], inplace=True)
-        cols_id = range(5)
-        self.diagnostic_full.drop(columns=self.diagnostic_full.columns[cols_id], inplace=True)
+        #cols_id = range(5)
+        #self.diagnostic_full.drop(columns=self.diagnostic_full.columns[cols_id], inplace=True)
 
         self.dev["gold_label_encoding"] = self.dev["gold_label"].map(
             {"neutral": 0, "contradiction": 1, "entailment": 2})
-        self.diagnostic_full["label_encoding"] = self.diagnostic_full["Label"].map(
-            {"neutral": 0, "contradiction": 1, "entailment": 2})
+        #self.diagnostic_full["label_encoding"] = self.diagnostic_full["Label"].map(
+        #    {"neutral": 0, "contradiction": 1, "entailment": 2})
         self.train["gold_label_encoding"] = self.train["gold_label"].map(
             {"neutral": 0, "contradiction": 1, "entailment": 2})
+
+        self.train.dropna(inplace=True)
 
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["gold_label_encoding"].nunique())

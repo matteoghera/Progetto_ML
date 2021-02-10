@@ -20,12 +20,13 @@ class TransformerEncoder(nn.Module):
         self.max_len = max_len
 
     def forward(self, input_ids, attention_mask, token_type_ids):
-        last_hidden_state, pooled_output = self.bert(
+        last_hidden_state, _ = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
-        return last_hidden_state, pooled_output
+        pooled_output=last_hidden_state[:,0]
+        return pooled_output
 
 
 class MT_DNN(nn.Module):
@@ -36,14 +37,14 @@ class MT_DNN(nn.Module):
         self.dropout=nn.Dropout(p=p)
 
     def forward(self,input_ids, attention_mask, token_type_ids):
-        last_hidden_state, pooled_output = self.encoder(
+        pooled_output = self.encoder(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
         pooled_output = self.dropout(pooled_output)
         pooled_output = self.obj_function(pooled_output)
-        return last_hidden_state, pooled_output
+        return pooled_output
 
 
 class ModelManager:
@@ -67,6 +68,7 @@ class ModelManager:
 
         self.train_results = []
         self.val_results = []
+        self.best_accuracy=0
 
 
     def save_model(self, val_acc, models_path):
@@ -108,8 +110,8 @@ class ModellingHelper:
                 print(current_task.get_name())
                 i=0
 
-                #train, train_tokenized_data_loader = current_task.get_train()
-                train, train_tokenized_data_loader = current_task.get_dev()
+                train, train_tokenized_data_loader = current_task.get_train()
+                #train, train_tokenized_data_loader = current_task.get_dev()
                 train_acc, train_loss, i = self.__train_epoch(model_manager.model,current_task, train_tokenized_data_loader,
                                                            model_manager.loss_fn, model_manager.optimizer,
                                                            model_manager.scheduler, len(train), i)
@@ -153,7 +155,7 @@ class ModellingHelper:
             token_type_ids = d["token_type_ids"].to(device)
             targets = d['targets'].to(device)
 
-            encoder_hidden_states, pooled_output = model(
+            pooled_output = model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 token_type_ids=token_type_ids
@@ -166,12 +168,12 @@ class ModellingHelper:
             accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
 
             loss.backward()
-            del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss
+            del input_ids, attention_mask, token_type_ids, targets, pooled_output, preds, loss
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
-            sleep(1)
+            #sleep(1)
         return np.mean(accs),np.mean(losses), index
 
     def __eval_model(self,
@@ -195,7 +197,7 @@ class ModellingHelper:
                 token_type_ids = d["token_type_ids"].to(device)
                 targets = d['targets'].to(device)
 
-                encoder_hidden_states, pooled_output = model(
+                pooled_output = model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids,
@@ -206,8 +208,8 @@ class ModellingHelper:
                 index+=1
                 print(f'\rBatch ID: {index} / {n_batches} \t Pred: {np.around(preds.cpu().data.numpy(), decimals=1)} \t Targets: {np.around(targets.cpu().data.numpy(), decimals=1)}', end=" ")
                 accs.append(current_task.compute_matric_value(preds.cpu().data.numpy(), targets.cpu().data.numpy(), n_examples))
-                del input_ids, attention_mask, token_type_ids, targets, encoder_hidden_states, pooled_output, preds, loss
-                sleep(1)
+                del input_ids, attention_mask, token_type_ids, targets, pooled_output, preds, loss
+                #sleep(1)
         return np.mean(accs), np.mean(losses), index
 
     def view_result(self):
