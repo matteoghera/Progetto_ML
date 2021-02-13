@@ -68,7 +68,7 @@ class ModelManager:
 
         self.train_results = []
         self.val_results = []
-        self.best_accuracy=0
+        self.best_accuracy=-2
 
 
     def save_model(self, val_acc, models_path):
