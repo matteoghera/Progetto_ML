@@ -78,10 +78,17 @@ class ModelManager:
             self.best_accuracy = val_acc
 
     def save_train_metrics(self,epoch, loss, acc, phase):
-        if phase.__eq__("train"):
-            self.train_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "acc":acc})
+        if self.task.get_name()=="CoLA":
+            metric_name="Matthews corr."
+        elif self.task.get_name()=="STS-B":
+            metric_name="Pearson"
         else:
-            self.val_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "acc":acc})
+            metric_name="Accuracy"
+
+        if phase.__eq__("train"):
+            self.train_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_name": metric_name, "metric_value":acc})
+        else:
+            self.val_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_name": metric_name, "metric_value":acc})
         self.task.print_metrics(loss, acc, phase)
 
 
@@ -116,7 +123,7 @@ class ModellingHelper:
                                                            model_manager.loss_fn, model_manager.optimizer,
                                                            model_manager.scheduler, len(train), i)
                 print()
-                model_manager.save_train_metrics(epoch, train_loss, train_acc, "train")
+                model_manager.save_train_metrics(epoch+1, train_loss, train_acc, "train")
                 del train, train_tokenized_data_loader, train_acc, train_loss, i
 
 
@@ -130,9 +137,10 @@ class ModellingHelper:
                 val_acc, val_loss, i=self.__eval_model(model_manager.model, current_task, val_tokenized_data_loader,
                                                     model_manager.loss_fn, len(val), i)
                 print()
-                model_manager.save_train_metrics(epoch, val_loss, val_acc, "eval")
+                model_manager.save_train_metrics(epoch+1, val_loss, val_acc, "eval")
                 model_manager.save_model(val_acc, self.models_path)
                 del val, val_tokenized_data_loader, val_acc, val_loss
+            print()
 
     def __train_epoch(self,
                       model,
