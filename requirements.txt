@@ -3,8 +3,8 @@ torch
 path
 transformers==3.4.0
 numpy
-seaborn
+seaborn==0.11.1
 scikit-learn
 pandas
-matplotlib
+matplotlib==3.3.4
 scipy
