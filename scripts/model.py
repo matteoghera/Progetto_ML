@@ -55,10 +55,10 @@ class ModelManager:
         model=MT_DNN(self.encoder, self.task.get_objective_function(encoder.hidden_size), self.task.get_dropout_parameter())
         self.model=model.to(device)
 
-        _, dev_tokenized_data_loader = task.get_dev()
+        _, train_tokenized_data_loader = task.get_train()
 
         self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
-        total_steps = len(dev_tokenized_data_loader) * epochs
+        total_steps = len(train_tokenized_data_loader) * epochs
         self.scheduler = get_linear_schedule_with_warmup(
             self.optimizer,
             num_warmup_steps=total_steps * 0.1,
@@ -78,17 +78,10 @@ class ModelManager:
             self.best_accuracy = val_acc
 
     def save_train_metrics(self,epoch, loss, acc, phase):
-        if self.task.get_name()=="CoLA":
-            metric_name="Matthews corr."
-        elif self.task.get_name()=="STS-B":
-            metric_name="Pearson"
-        else:
-            metric_name="Accuracy"
-
         if phase.__eq__("train"):
-            self.train_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_name": metric_name, "metric_value":acc})
+            self.train_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_value":acc})
         else:
-            self.val_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_name": metric_name, "metric_value":acc})
+            self.val_results.append({"name": self.task.get_name(), "epoch": epoch, "loss":loss, "metric_value":acc})
         self.task.print_metrics(loss, acc, phase)
 
 
