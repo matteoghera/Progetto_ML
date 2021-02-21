@@ -55,10 +55,8 @@ class ModelManager:
         model=MT_DNN(self.encoder, self.task.get_objective_function(encoder.hidden_size), self.task.get_dropout_parameter())
         self.model=model.to(device)
 
-        _, train_tokenized_data_loader = task.get_train()
-
         self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
-        total_steps = len(train_tokenized_data_loader) * epochs
+        total_steps = task.MAX_TOTAL_BATCH * epochs
         self.scheduler = get_linear_schedule_with_warmup(
             self.optimizer,
             num_warmup_steps=total_steps * 0.1,
@@ -147,7 +145,8 @@ class ModellingHelper:
 
         model=model.train()
 
-        n_batches=round(n_examples/data_loader.batch_size)
+        #n_batches=round(n_examples/data_loader.batch_size)
+        n_batches = len(data_loader)
         losses = []
         accs=[]
         for d in data_loader:
@@ -170,7 +169,7 @@ class ModellingHelper:
 
             loss.backward()
             del input_ids, attention_mask, token_type_ids, targets, pooled_output, preds, loss
-            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            #nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
@@ -188,7 +187,8 @@ class ModellingHelper:
 
         model=model.eval()
 
-        n_batches = round(n_examples / data_loader.batch_size)
+        #n_batches = round(n_examples / data_loader.batch_size)
+        n_batches = len(data_loader)
         losses = []
         accs=[]
         with torch.no_grad():

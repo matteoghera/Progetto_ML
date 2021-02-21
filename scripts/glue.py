@@ -40,6 +40,7 @@ class ObjectiveFunction(nn.Module):
 
 
 class Tasks:
+    TOTAL_BATCH = 0
     def __init__(self, path):
         self.path = path
 
@@ -110,6 +111,7 @@ class SingleSentenceClassification(ClassificationTask):
                                    column_target="label")
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence")
+        Tasks.TOTAL_BATCH=Tasks.TOTAL_BATCH+len(self.train_tokenized_data.get_dataloader())
 
     def get_dev(self):
         return self.dev, self.dev_tokenized_data.get_dataloader()
@@ -137,6 +139,7 @@ class PairwiseTextClassification(ClassificationTask):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
     def get_dev(self):
         return self.dev, self.dev_tokenized_data.get_dataloader()
 
@@ -162,6 +165,7 @@ class TextSimilarity(Tasks):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2", dtype=float32)
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
     def get_dev(self):
         return self.dev, self.dev_tokenized_data.get_dataloader()
 
@@ -206,6 +210,7 @@ class RelevanceRanking(Tasks):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question",
                                    column_sequence2="sentence")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
 
     def get_dev(self):
         return self.dev, self.dev_tokenized_data.get_dataloader()
@@ -306,6 +311,7 @@ class RTE(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
 
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["label_encoding"].nunique())
@@ -350,6 +356,7 @@ class QQP(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="question1",
                                    column_sequence2="question2")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
 
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["is_duplicate"].nunique())
@@ -444,6 +451,7 @@ class SNLI(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
 
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size=hidden_size, n_classes=self.dev["gold_label_encoding"].nunique())
@@ -484,6 +492,7 @@ class MNLI(PairwiseTextClassification):
 
         self.test_tokenized_data = DatasetPlus(self.test, tokenizer, max_len, batch_size, num_workers, column_sequence1="sentence1",
                                    column_sequence2="sentence2")
+        Tasks.TOTAL_BATCH = Tasks.TOTAL_BATCH + len(self.train_tokenized_data.get_dataloader())
 
     def data_cleanup(self):
         cols_id = range(8)
