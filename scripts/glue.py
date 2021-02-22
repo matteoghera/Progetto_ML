@@ -31,7 +31,8 @@ class ObjectiveFunction(nn.Module):
         else:
             raise TypeError()
 
-
+MAX_ROWS_TRAIN=10000
+MAX_ROWS_EVAL=8000
 
 class Tasks:
     TOTAL_BATCH = 0
@@ -39,8 +40,8 @@ class Tasks:
         self.path = path
 
     def load_dev_test_train(self):
-        self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", error_bad_lines=False)
-        self.train = pd.read_csv(self.path / "train.tsv", sep="\t", error_bad_lines=False)
+        self.dev = pd.read_csv(self.path / "dev.tsv", nrows=MAX_ROWS_EVAL, sep="\t", error_bad_lines=False)
+        self.train = pd.read_csv(self.path / "train.tsv", nrows=MAX_ROWS_TRAIN, sep="\t", error_bad_lines=False)
         self.test = pd.read_csv(self.path / "test.tsv", sep="\t", error_bad_lines=False)
 
     def data_cleanup(self):
@@ -187,9 +188,6 @@ class TextSimilarity(Tasks):
     def predict(self, pooled_output):
         return torch.reshape(pooled_output, (-1,))
 
-
-
-
 class RelevanceRanking(Tasks):
     def __init__(self, path):
         super().__init__(path)
@@ -235,8 +233,8 @@ class CoLA(SingleSentenceClassification):
         self.data_cleanup()
 
     def load_dev_test_train(self):
-        self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", header=None, error_bad_lines=False)
-        self.train = pd.read_csv(self.path / "train.tsv", sep="\t", header=None, error_bad_lines=False)
+        self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", nrows=MAX_ROWS_EVAL, header=None, error_bad_lines=False)
+        self.train = pd.read_csv(self.path / "train.tsv", sep="\t", nrows=MAX_ROWS_TRAIN, header=None, error_bad_lines=False)
         self.test = pd.read_csv(self.path / "test.tsv", sep="\t", error_bad_lines=False)
 
     def data_cleanup(self):
@@ -461,8 +459,8 @@ class MNLI(PairwiseTextClassification):
         self.data_cleanup()
 
     def load_dev_test_train(self):
-        dev_matched = pd.read_csv(self.path / "dev_matched.tsv", sep="\t", error_bad_lines=False)
-        dev_mismatched = pd.read_csv(self.path / "dev_mismatched.tsv", sep="\t", error_bad_lines=False)
+        dev_matched = pd.read_csv(self.path / "dev_matched.tsv", sep="\t", nrows=MAX_ROWS_EVAL, error_bad_lines=False)
+        dev_mismatched = pd.read_csv(self.path / "dev_mismatched.tsv", sep="\t", nrows=MAX_ROWS_TRAIN, error_bad_lines=False)
         self.dev = pd.concat([dev_matched, dev_mismatched], ignore_index=True)
 
         test_matched = pd.read_csv(self.path / "test_matched.tsv", sep="\t", error_bad_lines=False)
@@ -525,8 +523,8 @@ class STS_B(TextSimilarity):
 
     def load_dev_test_train(self):
         import csv
-        self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", error_bad_lines=False)
-        self.train = pd.read_csv(self.path / "train.tsv", sep="\t", error_bad_lines=False)
+        self.dev = pd.read_csv(self.path / "dev.tsv", sep="\t", nrows=MAX_ROWS_EVAL, error_bad_lines=False)
+        self.train = pd.read_csv(self.path / "train.tsv", sep="\t", nrows=MAX_ROWS_TRAIN, error_bad_lines=False)
         self.test = pd.read_csv(self.path / "test.tsv", sep="\t", error_bad_lines=False,
                                 quoting=csv.QUOTE_NONE)  # engine='python')
 
