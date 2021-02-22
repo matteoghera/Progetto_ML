@@ -55,7 +55,8 @@ class ModelManager:
         model=MT_DNN(self.encoder, self.task.get_objective_function(encoder.hidden_size), self.task.get_dropout_parameter())
         self.model=model.to(device)
 
-        self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
+        #self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
+        self.optimizer = torch.optim.Adamax(self.model.parameters(), lr=5e-5)
         total_steps = task.MAX_TOTAL_BATCH * epochs
         self.scheduler = get_linear_schedule_with_warmup(
             self.optimizer,

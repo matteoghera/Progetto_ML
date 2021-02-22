@@ -10,17 +10,13 @@ from scripts.tokenizer import DatasetPlus
 
 
 class ObjectiveFunction(nn.Module):
-    def __init__(self, obj_task, hidden_size, n_classes=None, max_value=None):
+    def __init__(self, obj_task, hidden_size, n_classes):
         super(ObjectiveFunction, self).__init__()
         self.task=obj_task
-        if n_classes is None:
-           self.linear = nn.Linear(hidden_size, 1, bias=False)
-        else:
-            self.linear = nn.Linear(hidden_size, n_classes, bias=False)
-        self.max_value=max_value
+        self.linear = nn.Linear(hidden_size, n_classes, bias=False)
 
         self.softmax = nn.Softmax(dim=1)
-        self.relu=nn.ReLU()
+        self.sigmoid=nn.Sigmoid()
 
     def forward(self, pooled_output):
         pooled_output = self.linear(pooled_output)
@@ -28,11 +24,9 @@ class ObjectiveFunction(nn.Module):
             pooled_output=self.softmax(pooled_output)
             return pooled_output
         elif isinstance(self.task, TextSimilarity):
-            #pooled_output=self.relu((self.max_value+1)*self.sigmoid(pooled_output)-1)
-            #pooled_output=torch.round(pooled_output*10)/10
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
-            pooled_output=self.softmax(pooled_output)
+            pooled_output=self.sigmoid(pooled_output)
             return pooled_output
         else:
             raise TypeError()
@@ -176,7 +170,7 @@ class TextSimilarity(Tasks):
         return self.test, self.test_tokenized_data.get_dataloader()
 
     def get_objective_function(self, hidden_size):
-        return ObjectiveFunction(self, hidden_size, max_value=self.dev["score"].max())
+        return ObjectiveFunction(self, hidden_size, n_classes=1)
 
     def get_loss_function(self):
         return self.TextSimilarityLoss()
