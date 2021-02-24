@@ -217,7 +217,7 @@ class RelevanceRanking(Tasks):
         return ObjectiveFunction(self, hidden_size, n_classes=self.dev["label_encoding"].nunique())
 
     def get_loss_function(self):
-        return nn.CrossEntropyLoss()
+        return nn.NLLLoss()
 
     def predict(self, pooled_output):
         _, preds = torch.max(pooled_output, dim=1)
