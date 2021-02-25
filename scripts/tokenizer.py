@@ -39,7 +39,7 @@ class DatasetPlus:
         )
 
     def viewData(self):
-        return next(self.my_dataloader.__iter__())
+        return self.my_dataloader.__iter__()
 
     def get_dataloader(self):
         return self.my_dataloader
@@ -78,8 +78,6 @@ class DatasetPlus:
                     'input_ids': encoding['input_ids'].flatten(),
                     'token_type_ids': encoding['token_type_ids'].flatten(),
                     'attention_mask': encoding['attention_mask'].flatten(),
-                    'positional_encoding': torch.tensor(
-                        self.positional_encoding(encoding['input_ids'].flatten().tolist()), dtype=torch.double),
                     'targets': torch.tensor(target, dtype=self.dtype)
                 }
             elif self.sequence2 is None and not self.targets is None:
@@ -99,8 +97,6 @@ class DatasetPlus:
                     'input_ids': encoding['input_ids'].flatten(),
                     'token_type_ids': encoding['token_type_ids'].flatten(),
                     'attention_mask': encoding['attention_mask'].flatten(),
-                    'positional_encoding': torch.tensor(
-                        self.positional_encoding(encoding['input_ids'].flatten().tolist()), dtype=torch.double),
                     'targets': torch.tensor(target, dtype=self.dtype)
                 }
             else:
@@ -118,33 +114,6 @@ class DatasetPlus:
                     'sequence1': sequence1,
                     'input_ids': encoding['input_ids'].flatten(),
                     'token_type_ids': encoding['token_type_ids'].flatten(),
-                    'positional_encoding': torch.tensor(
-                        self.positional_encoding(encoding['input_ids'].flatten().tolist()), dtype=torch.double),
                     'attention_mask': encoding['attention_mask'].flatten(),
                 }
 
-        def positional_encoding(self, input_ids):
-            d_model = self.max_len
-
-            first_sep_token_id = 0
-            find = False
-            while not find:
-                first_sep_token_id += 1
-                if input_ids[first_sep_token_id] == 102:
-                    find = True
-
-            num_tokens_seq_1 = len(input_ids[:first_sep_token_id + 1])
-            num_tokens_seq_2 = d_model - num_tokens_seq_1
-            positional_encoding = []
-            for pos in range(d_model):
-                if pos < num_tokens_seq_1:
-                    if num_tokens_seq_1 % 2 == 0:
-                        positional_encoding.append(sin(pos / (10000 ** ((2 * num_tokens_seq_1) / d_model))))
-                    else:
-                        positional_encoding.append(cos(pos / (10000 ** ((2 * num_tokens_seq_1) / d_model))))
-                else:
-                    if num_tokens_seq_2 % 2 == 0:
-                        positional_encoding.append(sin(pos / (10000 ** ((2 * num_tokens_seq_2) / d_model))))
-                    else:
-                        positional_encoding.append(cos(pos / (10000 ** ((2 * num_tokens_seq_2) / d_model))))
-            return positional_encoding
