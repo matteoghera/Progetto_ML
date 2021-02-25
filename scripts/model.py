@@ -57,7 +57,7 @@ class ModelManager:
 
         #self.optimizer = AdamW(self.model.parameters(), lr=5e-5, correct_bias=False)
         self.optimizer = torch.optim.Adamax(self.model.parameters(), lr=5e-5)
-        total_steps = task.MAX_TOTAL_BATCH * epochs
+        total_steps = task.TOTAL_BATCH * epochs
         self.scheduler = get_linear_schedule_with_warmup(
             self.optimizer,
             num_warmup_steps=total_steps * 0.1,
