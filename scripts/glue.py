@@ -2,6 +2,7 @@ import pandas as pd
 from path import Path
 from torch import float32, nn
 import torch
+import numpy as np
 
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 from scipy.stats import pearsonr
@@ -146,6 +147,40 @@ class PairwiseTextClassification(ClassificationTask):
 
     def get_objective_function(self, hidden_size):
         return ObjectiveFunction(self, hidden_size, n_classes=self.dev["label"].nunique())
+
+    def compute_sentences_statistic(self):
+        train_dataloader_iterator=self.train_tokenized_data.viewData()
+        list_n_token_P, list_n_token_H=self.__compute_number_token_sentences(train_dataloader_iterator)
+
+        dev_dataloader_iterator = self.dev_tokenized_data.viewData()
+        list_n_token_P_1, list_n_token_H_1 = self.__compute_number_token_sentences(dev_dataloader_iterator)
+
+        list_n_token_P.extend(list_n_token_P_1)
+        list_n_token_H.extend(list_n_token_H_1)
+
+        list_n_token_P=np.array(list_n_token_P)
+        list_n_token_H = np.array(list_n_token_H)
+        return np.ceil(np.mean(list_n_token_P)), np.ceil(np.mean(list_n_token_H))
+
+    def __compute_number_token_sentences(self, train_dataloader_iterator):
+        stop = False
+        list_n_token_P = []
+        list_n_token_H = []
+        while not stop:
+            data = next(train_dataloader_iterator, None)
+            if data is not None:
+                for i in range(len(data["sequence1"])):
+                    result = np.array([data['attention_mask'].tolist()[i],
+                                       data["token_type_ids"].tolist()[i]])
+                    temp = np.sum(result, axis=0)
+                    n_token_P = sum(filter(lambda e: e == 1, temp))
+                    n_token_H = sum(filter(lambda e: e == 2, temp))
+                    list_n_token_P.append(n_token_P)
+                    list_n_token_H.append(n_token_H)
+            else:
+                stop = True
+        return list_n_token_P, list_n_token_H
+
 
 class TextSimilarity(Tasks):
     def __init__(self, path):
