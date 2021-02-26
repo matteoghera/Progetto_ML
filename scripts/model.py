@@ -96,9 +96,15 @@ class ModellingHelper:
 
     def train(self, epochs):
         self.model_manager_list = []
+        index=1
+        n_models=len(self.tasks)
         for task in self.tasks:
+            current_task_name=task.get_name()
+            print(f'\rMT-DNN model initialization {index} / {n_models}: Task {current_task_name}...',    end=" ")
             self.model_manager_list.append(ModelManager(task, self.encoder, epochs))
+            index+=1
 
+        print()
         for epoch in range(epochs):
             print(f'Epoch {epoch + 1}/{epochs}')
             print('-' * 10)

@@ -175,7 +175,7 @@ class PairwiseTextClassification(ClassificationTask):
 
         list_n_token_P=np.array(list_n_token_P)
         list_n_token_H = np.array(list_n_token_H)
-        return np.ceil(np.mean(list_n_token_P)), np.ceil(np.mean(list_n_token_H))
+        return int(np.ceil(np.mean(list_n_token_P))), int(np.ceil(np.mean(list_n_token_H)))
 
     def __compute_number_token_sentences(self, train_dataloader_iterator):
         stop = False
@@ -469,6 +469,7 @@ class SNLI(PairwiseTextClassification):
             {"neutral": 0, "contradiction": 1, "entailment": 2})
 
         self.train.dropna(inplace=True)
+        self.dev.dropna(inplace=True)
 
     def __from_json(self, file_name):
         import re
