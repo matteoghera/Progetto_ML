@@ -26,7 +26,7 @@ class TransformerEncoder(nn.Module):
             token_type_ids=token_type_ids
         )
         pooled_output=last_hidden_state[:,0]
-        return pooled_output
+        return last_hidden_state, pooled_output
 
 
 class MT_DNN(nn.Module):
@@ -37,13 +37,13 @@ class MT_DNN(nn.Module):
         self.dropout=nn.Dropout(p=p)
 
     def forward(self,input_ids, attention_mask, token_type_ids):
-        pooled_output = self.encoder(
+        last_hidden_state, pooled_output = self.encoder(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids
         )
         pooled_output = self.dropout(pooled_output)
-        pooled_output = self.obj_function(pooled_output)
+        pooled_output = self.obj_function(last_hidden_state, pooled_output)
         return pooled_output
 
 

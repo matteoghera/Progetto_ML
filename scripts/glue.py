@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, matthews_corrcoef
 from scipy.stats import pearsonr
 
 from scripts.tokenizer import DatasetPlus
+from scripts.san import Classifier
 
 
 class ObjectiveFunction(nn.Module):
@@ -16,14 +17,25 @@ class ObjectiveFunction(nn.Module):
         self.task=obj_task
         self.linear = nn.Linear(hidden_size, n_classes, bias=False)
 
+        n_token_P, n_token_H = self.task.compute_sentences_statistic()
+        if n_token_P is not None and n_token_H is not None:
+            self.classifier=Classifier(50, hidden_size, n_token_P, n_token_H, n_classes, self.task.get_dropout_parameter())
+        else:
+            self.classifier=None
+
         self.softmax = nn.Softmax(dim=1)
         self.sigmoid=nn.Sigmoid()
 
-    def forward(self, pooled_output):
+
+    def forward(self, last_hidden_state, pooled_output):
         pooled_output = self.linear(pooled_output)
         if isinstance(self.task, ClassificationTask):
-            pooled_output=self.softmax(pooled_output)
-            return pooled_output
+            if self.classifier is None:
+                pooled_output=self.softmax(pooled_output)
+                return pooled_output
+            else:
+                pooled_output=self.classifier(last_hidden_state)
+                return pooled_output
         elif isinstance(self.task, TextSimilarity):
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
@@ -83,6 +95,9 @@ class Tasks:
 
     def compute_matric_value(self, preds, targets, n_examples):
         return accuracy_score(targets,preds)*(len(targets)/n_examples)
+
+    def compute_sentences_statistic(self):
+        return None, None
 
 class ClassificationTask(Tasks):
     def __init__(self, path):
