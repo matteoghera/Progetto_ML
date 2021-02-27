@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch.nn.parameter import Parameter
 
+from scripts.model import device
+
 # my Stochastic Answer Network implementation
 class San(nn.Module):
     def __init__(self, K, n_hidden_states, n_token_P, n_token_H, n_label):
@@ -12,15 +14,15 @@ class San(nn.Module):
         self.n_token_H = n_token_H
         self.n_label = n_label
 
-        self.w1 = Parameter(torch.rand(n_hidden_states, 1))
-        self.W2 = Parameter(torch.rand(n_hidden_states, n_token_H))
-        self.W3 = Parameter(torch.rand(n_token_H + n_token_P + 2 * max([n_token_H, n_token_P]), n_label))
+        self.w1 = Parameter(torch.rand(n_hidden_states, 1)).to(device)
+        self.W2 = Parameter(torch.rand(n_hidden_states, n_token_H)).to(device)
+        self.W3 = Parameter(torch.rand(n_token_H + n_token_P + 2 * max([n_token_H, n_token_P]), n_label)).to(device)
 
-        self.gru = nn.GRUCell(self.n_token_P, self.n_token_H, bias=False)
+        self.gru = nn.GRUCell(self.n_token_P, self.n_token_H, bias=False).to(device)
 
     def forward(self, M_h, M_p):
-        P_r = torch.zeros(self.n_label, 1)
-        sk = torch.zeros(1, self.n_token_H)
+        P_r = torch.zeros(self.n_label, 1).to(device)
+        sk = torch.zeros(1, self.n_token_H).to(device)
         for j in range(M_h.size()[0]):
             M_j_sum = M_h[[j]]  # vettore riga di dimensioni 1 x n (numero token ipotesi)
             alpha = 0
@@ -31,7 +33,7 @@ class San(nn.Module):
             sk += alpha.matmul(M_j_sum)
 
         for k in range(self.K):
-            xk = torch.zeros(1, self.n_token_P)
+            xk = torch.zeros(1, self.n_token_P).to(device)
             for j in range(M_p.size()[0]):
                 M_j_sum = M_p[[j]]  # vettore riga di dimensioni 1 x m (numero token premessa)
                 beta = 0
@@ -46,12 +48,12 @@ class San(nn.Module):
             # inserisco gli elementi di s_k, x_k, abs(s_k-x_k) e s_k*x_k per colonna.
             # Ottengo un vettore di dimensione numero_token_premessa+ numero_token_ipotesi+2*max{numero_token_premessa, numero_token_ipotesi}
             max_length = max([self.n_token_H, self.n_token_P])
-            sk_1 = torch.cat((sk, torch.zeros(1, max_length - sk.size()[1])), 1)
-            xk_1 = torch.cat((xk, torch.zeros(1, max_length - xk.size()[1])), 1)
+            sk_1 = torch.cat((sk, torch.zeros(1, max_length - sk.size()[1]).to(device)), 1)
+            xk_1 = torch.cat((xk, torch.zeros(1, max_length - xk.size()[1]).to(device)), 1)
             result = torch.cat((sk, xk, torch.abs(sk_1 - xk_1), sk_1 * xk_1), 1).t()
             P_r_k = nn.functional.softmax(self.W3.t().matmul(result), dim=0)
             P_r += P_r_k
-        return (P_r.t() / self.K).squeeze(dim=0)
+        return P_r.t() / self.K
 
 # this is my class for manage the classification
 class Classifier(nn.Module):
@@ -60,11 +62,11 @@ class Classifier(nn.Module):
         self.n_token_P=n_token_P
         self.n_token_H = n_token_H
         self.n_label=n_label
-        self.san=San(K, n_hidden_states, n_token_P, n_token_H, n_label)
+        self.san=San(K, n_hidden_states, n_token_P, n_token_H, n_label).to(device)
         self.dropout = nn.Dropout(p=p)
 
     def forward(self, last_hidden_state):
-        pooled_ouput=torch.empty(0, self.n_label)
+        pooled_ouput=torch.empty(0, self.n_label).to(device)
         for i in range(last_hidden_state.size()[0]):
             M = last_hidden_state[i, :, :].t()
             M = self.dropout(M)
