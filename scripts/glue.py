@@ -24,6 +24,7 @@ class ObjectiveFunction(nn.Module):
             self.classifier=None
 
         self.softmax = nn.Softmax(dim=1)
+        self.log_softmax=nn.LogSoftmax(dim=1)
         self.sigmoid=nn.Sigmoid()
 
 
@@ -39,7 +40,7 @@ class ObjectiveFunction(nn.Module):
         elif isinstance(self.task, TextSimilarity):
             return pooled_output
         elif isinstance(self.task, RelevanceRanking):
-            pooled_output=self.sigmoid(pooled_output)
+            pooled_output=self.log_softmax(self.sigmoid(pooled_output))
             return pooled_output
         else:
             raise TypeError()
