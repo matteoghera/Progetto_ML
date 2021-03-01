@@ -4,6 +4,8 @@ from torch.nn.parameter import Parameter
 
 from scripts.model import device
 
+# Let be d number of hidden states, m number of premise tokens and n number of hypothesis tokens
+
 # my Stochastic Answer Network implementation
 class San(nn.Module):
     def __init__(self, K, n_hidden_states, n_token_P, n_token_H, n_label):
@@ -22,26 +24,17 @@ class San(nn.Module):
 
     def forward(self, M_h, M_p):
         P_r = torch.zeros(self.n_label, 1).to(device)
-        sk = torch.zeros(1, self.n_token_H).to(device)
-        for j in range(M_h.size()[0]):
-            M_j_sum = M_h[[j]]  # vettore riga di dimensioni 1 x n (numero token ipotesi)
-            alpha = 0
-            for i in range(M_h.size()[1]):
-                M_j_softmax = M_h[:, [i]]  # vettore colonna di dimensioni d x 1 (numero hidden states)
-                arg = self.w1.t().matmul(M_j_softmax)
-                alpha = arg / torch.sum(M_j_softmax, dim=0)
-            sk += alpha.matmul(M_j_sum)
+        alpha = nn.functional.softmax(self.w1.t().matmul(M_h),
+                                      dim=1)  # alpha: vettore colonna di dimensioni 1 x n (numero token ipotesi)
+        sk = self.__compute_k_th(alpha, M_h, (1, self.n_token_H))
+        del alpha
 
+        # Loop complexity: O(k) where k is an iperparameter
         for k in range(self.K):
-            xk = torch.zeros(1, self.n_token_P).to(device)
-            for j in range(M_p.size()[0]):
-                M_j_sum = M_p[[j]]  # vettore riga di dimensioni 1 x m (numero token premessa)
-                beta = 0
-                for i in range(M_p.size()[1]):
-                    M_j_softmax = M_p[:, [i]]  # vettore colonna di dimensioni d x 1 (numero hidden states)
-                    arg = sk.matmul(self.W2.t().matmul(M_j_softmax))
-                    beta = arg / torch.sum(M_j_softmax, dim=0)
-                xk += beta.matmul(M_j_sum)
+            beta = nn.functional.softmax(sk.matmul(self.W2.t().matmul(M_p)),
+                                         dim=1)  # beta: vettore colonna di dimensioni 1 x m (numero token premessa)
+            xk = self.__compute_k_th(beta, M_p, (1, self.n_token_P))
+            del beta
 
             sk = self.gru(xk, sk)
 
@@ -51,9 +44,20 @@ class San(nn.Module):
             sk_1 = torch.cat((sk, torch.zeros(1, max_length - sk.size()[1]).to(device)), 1)
             xk_1 = torch.cat((xk, torch.zeros(1, max_length - xk.size()[1]).to(device)), 1)
             result = torch.cat((sk, xk, torch.abs(sk_1 - xk_1), sk_1 * xk_1), 1).t()
+            del sk_1, xk_1
             P_r_k = nn.functional.softmax(self.W3.t().matmul(result), dim=0)
             P_r += P_r_k
-        return P_r.t() / self.K
+            del result, P_r_k
+        return (P_r.t() / self.K)
+
+    def __compute_k_th(self, coeff, memory, size_result):
+        result = torch.zeros(*size_result).to(device)
+        # Loop complexity is O(d)
+        for j in range(memory.size()[0]):
+            # memory[[j]] vettore riga di dimensioni 1 x m o n (numero token premessa o ipotesi)
+            result += coeff[:, [j]].matmul(memory[[j]])
+        return result
+
 
 # this is my class for manage the classification
 class Classifier(nn.Module):
@@ -67,11 +71,14 @@ class Classifier(nn.Module):
 
     def forward(self, last_hidden_state):
         pooled_ouput=torch.empty(0, self.n_label).to(device)
+        # Loop complexity: O(h) where h is the bath size, i.e. the number of sequence in the current batch
         for i in range(last_hidden_state.size()[0]):
             M = last_hidden_state[i, :, :].t()
             M = self.dropout(M)
             M_p = M[:, :self.n_token_P]
             M_h = M[:, self.n_token_P:self.n_token_P+self.n_token_H]
+            del M
             P_r=self.san(M_h, M_p)
+            del M_p, M_h
             pooled_ouput=torch.cat((pooled_ouput, P_r), dim=0)
         return pooled_ouput
