@@ -16,9 +16,9 @@ class San(nn.Module):
         self.n_token_H = n_token_H
         self.n_label = n_label
 
-        self.w1 = Parameter(torch.rand(n_hidden_states, 1)).to(device)
-        self.W2 = Parameter(torch.rand(n_hidden_states, n_token_H)).to(device)
-        self.W3 = Parameter(torch.rand(n_token_H + n_token_P + 2 * max([n_token_H, n_token_P]), n_label)).to(device)
+        self.w1 = Parameter(torch.rand(n_hidden_states, 1, requires_grad=True)).to(device)
+        self.W2 = Parameter(torch.rand(n_hidden_states, n_token_H, requires_grad=True)).to(device)
+        self.W3 = Parameter(torch.rand(n_token_H + n_token_P + 2 * max([n_token_H, n_token_P]), n_label, requires_grad=True)).to(device)
 
         self.gru = nn.GRUCell(self.n_token_P, self.n_token_H, bias=False).to(device)
 
@@ -26,14 +26,14 @@ class San(nn.Module):
         P_r = torch.zeros(self.n_label, 1).to(device)
         alpha = nn.functional.softmax(self.w1.t().matmul(M_h),
                                       dim=1)  # alpha: vettore colonna di dimensioni 1 x n (numero token ipotesi)
-        sk = self.__compute_k_th(alpha, M_h, (1, self.n_token_H))
+        sk = self.__compute_k_th(alpha, M_h)
         del alpha
 
         # Loop complexity: O(k) where k is an iperparameter
         for k in range(self.K):
             beta = nn.functional.softmax(sk.matmul(self.W2.t().matmul(M_p)),
                                          dim=1)  # beta: vettore colonna di dimensioni 1 x m (numero token premessa)
-            xk = self.__compute_k_th(beta, M_p, (1, self.n_token_P))
+            xk = self.__compute_k_th(beta, M_p)
             del beta
 
             sk = self.gru(xk, sk)
@@ -47,16 +47,26 @@ class San(nn.Module):
             del sk_1, xk_1
             P_r_k = nn.functional.softmax(self.W3.t().matmul(result), dim=0)
             P_r += P_r_k
-            del result, P_r_k
+            del result, P_r_k, xk
+        del sk
         return (P_r.t() / self.K)
 
-    def __compute_k_th(self, coeff, memory, size_result):
-        result = torch.zeros(*size_result).to(device)
-        # Loop complexity is O(d)
-        for j in range(memory.size()[0]):
-            # memory[[j]] vettore riga di dimensioni 1 x m o n (numero token premessa o ipotesi)
-            result += coeff[:, [j]].matmul(memory[[j]])
-        return result
+    def __compute_k_th(self, coeff, memory):
+        # coeff: vettore riga di dimensione 1 x n (o m) (numero token ipotesi/premessa)
+        # memory: matrice di dimensione d x n (o m) (d: numero hidden states)
+        #
+        # result: vettore riga di dimensioni 1 x n (o m)
+        result = list(map(self.__compute_sum, coeff.t(), memory.t()))
+        result = torch.cat(result, dim=0)
+        return torch.sum(result, dim=1).unsqueeze(dim=0)
+
+    def __compute_sum(self, coeff, memory):
+        # coeff: scalare
+        # memory: vettore riga di dimensioni 1 x d (numero hidden states)
+        #
+        # result: vettore riga di dimensioni 1 x d (numero hidden states)
+        result = coeff * memory
+        return result.unsqueeze(dim=0)
 
 
 # this is my class for manage the classification
